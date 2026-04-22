@@ -241,7 +241,7 @@ export const reunionsApi = {
   }> => {
     const formData = new FormData();
     const ext = audioUri.split(".").pop()?.toLowerCase() || "m4a";
-    // Normaliser le MIME pour Whisper
+    // Normaliser le MIME audio
     const mimeMap: Record<string, string> = {
       m4a: "audio/mp4", mp4: "audio/mp4", mp3: "audio/mpeg",
       wav: "audio/wav", webm: "audio/webm", ogg: "audio/ogg",
