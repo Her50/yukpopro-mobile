@@ -103,6 +103,71 @@ export const agentApi = {
   },
 };
 
+// Alias rétro-compat pour code mobile attendant `agentsApi`
+export const agentsApi = agentApi;
+
+// ── Traduction Bureau (texte + fichier DOCX/PDF/PPTX) ─────────────────────────
+
+export const traductionApi = {
+  texte: async (payload: {
+    contenu: string;
+    langue_source?: string;
+    langue_cible: string;
+    domaine?: string;
+  }) => {
+    const { data } = await http.post("/bureau/traduction/texte", payload, {
+      timeout: 120_000,
+    });
+    return data as {
+      texte_traduit: string;
+      langue_source: string;
+      langue_cible: string;
+      nb_mots_source: number;
+      nb_mots_cible: number;
+      credits_debites?: number;
+    };
+  },
+
+  fichier: async (
+    file: { uri: string; name: string; type: string },
+    langue_source: string,
+    langue_cible: string,
+  ) => {
+    const form = new FormData();
+    // @ts-ignore — React Native FormData
+    form.append("fichier", { uri: file.uri, name: file.name, type: file.type });
+    form.append("langue_source", langue_source);
+    form.append("langue_cible", langue_cible);
+    const { data } = await http.post("/bureau/traduction/fichier", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 240_000,
+    });
+    return data as { fichier_id: string; nom_fichier?: string };
+  },
+
+  telechargerUrl: (fichier_id: string) =>
+    `${BASE_URL}/bureau/traduction/fichier/${encodeURIComponent(fichier_id)}`,
+};
+
+// ── Documents (Mes Documents — Bureau partagé) ────────────────────────────────
+
+export const documentsApi = {
+  lister: async (): Promise<{
+    documents: Array<Record<string, any>>;
+    total: number;
+  }> => {
+    const { data } = await http.get("/bureau/documents/");
+    return data;
+  },
+
+  telechargerUrl: (nom_fichier: string) =>
+    `${BASE_URL}/bureau/documents/telecharger/${encodeURIComponent(nom_fichier)}`,
+
+  supprimer: async (id: number | string) => {
+    await http.delete(`/bureau/documents/${id}`);
+  },
+};
+
 // ── Générateurs ───────────────────────────────────────────────────────────────
 
 export interface DocumentHistorique {
@@ -231,6 +296,59 @@ export const chatApi = {
 };
 
 // ── Réunions ──────────────────────────────────────────────────────────────────
+
+// ── Traduction Live (YukpoTranslate) ────────────────────────────────────────
+
+export const translateLiveApi = {
+  status: async (): Promise<{
+    stt_available: boolean;
+    translator_available: boolean;
+    tts_available: boolean;
+    price_per_minute_credits: number;
+    price_per_minute_fcfa: number;
+  }> => {
+    const { data } = await http.get("/translate/live/status");
+    return data;
+  },
+
+  langues: async (): Promise<{
+    langues: Array<{ code: string; label: string; flag: string; stt: boolean; trad: boolean }>;
+  }> => {
+    const { data } = await http.get("/translate/live/langues");
+    return data;
+  },
+
+  traduireChunk: async (
+    audioUri: string,
+    source: string,
+    target: string,
+  ): Promise<{
+    transcript: string;
+    translation: string;
+    source_lang: string;
+    target_lang: string;
+    duration_s: number;
+    credits_debited: number;
+  }> => {
+    const form = new FormData();
+    const ext = audioUri.split(".").pop()?.toLowerCase() || "m4a";
+    const mimeMap: Record<string, string> = {
+      m4a: "audio/mp4", mp4: "audio/mp4", mp3: "audio/mpeg",
+      wav: "audio/wav", webm: "audio/webm", ogg: "audio/ogg",
+      aac: "audio/aac", "3gp": "audio/3gpp",
+    };
+    const mime = mimeMap[ext] ?? "audio/mp4";
+    // @ts-ignore — RN FormData
+    form.append("audio", { uri: audioUri, name: `chunk.${ext}`, type: mime });
+    form.append("source", source);
+    form.append("target", target);
+    const { data } = await http.post("/translate/live/chunk", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 30_000,
+    });
+    return data;
+  },
+};
 
 export const reunionsApi = {
   transcrireDirect: async (audioUri: string, langue = "auto"): Promise<{

@@ -13,10 +13,11 @@ import { OnboardingScreen } from "@/screens/OnboardingScreen";
 import { DashboardScreen } from "@/screens/DashboardScreen";
 import { ChatScreen } from "@/screens/ChatScreen";
 import { ReunionsScreen } from "@/screens/ReunionsScreen";
+import { TranslateLiveScreen } from "@/screens/TranslateLiveScreen";
 import { GenerateursScreen } from "@/screens/GenerateursScreen";
 import { ProfilScreen } from "@/screens/ProfilScreen";
 import { AbonnementScreen } from "@/screens/AbonnementScreen";
-import { EmploiScreen, MarchesScreen, EnquetesScreen } from "@/screens";
+import { EmploiScreen, MarchesScreen, EnquetesScreen, TraductionScreen, DocumentsScreen, AdminScreen } from "@/screens";
 
 // ── Stacks ────────────────────────────────────────────────────────────────────
 
@@ -44,6 +45,7 @@ const MainTabs = () => (
           Dashboard:   focused ? "grid"                    : "grid-outline",
           YukpoIA:     focused ? "chatbubble-ellipses"     : "chatbubble-ellipses-outline",
           Reunions:    focused ? "people"                  : "people-outline",
+          Translate:   focused ? "radio"                   : "radio-outline",
           Enquetes:    focused ? "analytics"               : "analytics-outline",
           Emploi:      focused ? "briefcase"               : "briefcase-outline",
           Marches:     focused ? "hammer"                  : "hammer-outline",
@@ -58,6 +60,7 @@ const MainTabs = () => (
     <Tab.Screen name="Dashboard"   component={DashboardScreen}   options={{ tabBarLabel: "Accueil" }} />
     <Tab.Screen name="YukpoIA"     component={ChatScreen}        options={{ tabBarLabel: "Yukpo Pro" }} />
     <Tab.Screen name="Reunions"    component={ReunionsScreen}    options={{ tabBarLabel: "Réunions" }} />
+    <Tab.Screen name="Translate"   component={TranslateLiveScreen} options={{ tabBarLabel: "Live" }} />
     <Tab.Screen name="Enquetes"    component={EnquetesScreen}    options={{ tabBarLabel: "Enquêtes" }} />
     <Tab.Screen name="Emploi"      component={EmploiScreen}      options={{ tabBarLabel: "Emploi" }} />
     <Tab.Screen name="Marches"     component={MarchesScreen}     options={{ tabBarLabel: "Marchés" }} />
@@ -80,7 +83,12 @@ export const RootNavigator = () => {
             <Stack.Screen name="Onboarding" component={OnboardingScreen} />
           </>
         ) : (
-          <Stack.Screen name="Main" component={MainTabs} />
+          <>
+            <Stack.Screen name="Main"        component={MainTabs} />
+            <Stack.Screen name="Traduction"  component={TraductionScreen} options={{ headerShown: true, title: "Traduction" }} />
+            <Stack.Screen name="Documents"   component={DocumentsScreen}  options={{ headerShown: true, title: "Mes Documents" }} />
+            <Stack.Screen name="Admin"       component={AdminScreen}      options={{ headerShown: true, title: "Admin" }} />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>
