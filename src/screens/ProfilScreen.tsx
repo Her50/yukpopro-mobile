@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -10,8 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import * as SecureStore from "expo-secure-store";
-import { COLORS, useAuthStore, useProfilStore } from "@/store";
+import { useColors, type Colors, useAuthStore, useProfilStore, useThemeStore } from "@/store";
 import { profilApi, authApi } from "@/api/client";
 
 const METIERS = [
@@ -44,6 +43,11 @@ const XP_LEVELS = [
 ];
 
 export const ProfilScreen = () => {
+  const C = useColors();
+  const styles = useMemo(() => makeStyles(C), [C]);
+  const theme = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggleTheme);
+
   const { user, logout } = useAuthStore();
   const { profil, setProfil } = useProfilStore();
   const [metier, setMetier] = useState((profil as any)?.metier || "");
@@ -91,7 +95,6 @@ export const ProfilScreen = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      {/* Avatar / Header */}
       <View style={styles.profileHeader}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
@@ -101,15 +104,13 @@ export const ProfilScreen = () => {
         <Text style={styles.userName}>{(user as any)?.nom || "Utilisateur"}</Text>
         <Text style={styles.userEmail}>{(user as any)?.email || ""}</Text>
 
-        {/* XP Badge */}
         <View style={styles.xpBadge}>
-          <Ionicons name="star" size={14} color={COLORS.gold} />
+          <Ionicons name="star" size={14} color={C.gold} />
           <Text style={styles.xpBadgeText}>
             Niveau {currentLevel.level} — {currentLevel.name} · {xp} XP
           </Text>
         </View>
 
-        {/* XP Bar */}
         {nextLevel && (
           <View style={styles.xpBarContainer}>
             <View style={styles.xpBarBg}>
@@ -122,7 +123,6 @@ export const ProfilScreen = () => {
         )}
       </View>
 
-      {/* Stats */}
       <View style={styles.statsRow}>
         <View style={styles.statBox}>
           <Text style={styles.statValue}>{(profil as any)?.nombre_requetes || 0}</Text>
@@ -140,7 +140,21 @@ export const ProfilScreen = () => {
         </View>
       </View>
 
-      {/* Form */}
+      {/* Theme toggle — Apparence */}
+      <Text style={styles.sectionTitle}>Apparence</Text>
+      <TouchableOpacity style={styles.themeRow} onPress={toggleTheme} activeOpacity={0.7}>
+        <View style={styles.themeIconWrap}>
+          <Ionicons name={theme === "dark" ? "sunny-outline" : "moon-outline"} size={20} color={C.primary} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.themeLabel}>{theme === "dark" ? "Mode clair" : "Mode sombre"}</Text>
+          <Text style={styles.themeSub}>Basculer l'apparence de l'app</Text>
+        </View>
+        <View style={[styles.themeSwitch, theme === "dark" && styles.themeSwitchOn]}>
+          <View style={[styles.themeSwitchKnob, theme === "dark" && styles.themeSwitchKnobOn]} />
+        </View>
+      </TouchableOpacity>
+
       <Text style={styles.sectionTitle}>Informations professionnelles</Text>
 
       <Text style={styles.label}>Métier</Text>
@@ -179,7 +193,7 @@ export const ProfilScreen = () => {
       <TextInput
         style={styles.input}
         placeholder="Cabinet, ONG, entreprise..."
-        placeholderTextColor={COLORS.textMuted}
+        placeholderTextColor={C.textMuted}
         value={entreprise}
         onChangeText={setEntreprise}
       />
@@ -203,7 +217,6 @@ export const ProfilScreen = () => {
         ))}
       </View>
 
-      {/* Save */}
       <TouchableOpacity
         style={[styles.saveBtn, loading && styles.saveBtnDisabled]}
         onPress={handleSave}
@@ -224,9 +237,8 @@ export const ProfilScreen = () => {
         )}
       </TouchableOpacity>
 
-      {/* Logout */}
       <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-        <Ionicons name="log-out-outline" size={18} color={COLORS.error} />
+        <Ionicons name="log-out-outline" size={18} color={C.error} />
         <Text style={styles.logoutBtnText}>Se déconnecter</Text>
       </TouchableOpacity>
 
@@ -235,120 +247,109 @@ export const ProfilScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
+const makeStyles = (C: Colors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
   content: { padding: 20, paddingBottom: 48 },
   profileHeader: { alignItems: "center", marginBottom: 24 },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    backgroundColor: `${COLORS.primary}30`,
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 80, height: 80, borderRadius: 24,
+    backgroundColor: `${C.primary}30`,
+    borderWidth: 2, borderColor: C.primary,
+    alignItems: "center", justifyContent: "center",
     marginBottom: 12,
   },
-  avatarText: { color: COLORS.primary, fontSize: 36, fontWeight: "900" },
-  userName: { color: COLORS.textPrimary, fontSize: 22, fontWeight: "700" },
-  userEmail: { color: COLORS.textMuted, fontSize: 13, marginTop: 4 },
+  avatarText: { color: C.primary, fontSize: 36, fontWeight: "900" },
+  userName: { color: C.textPrimary, fontSize: 22, fontWeight: "700" },
+  userEmail: { color: C.textMuted, fontSize: 13, marginTop: 4 },
   xpBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 12,
-    backgroundColor: `${COLORS.gold}20`,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: `${COLORS.gold}40`,
+    flexDirection: "row", alignItems: "center", gap: 6, marginTop: 12,
+    backgroundColor: `${C.gold}20`,
+    paddingHorizontal: 14, paddingVertical: 6,
+    borderRadius: 20, borderWidth: 1, borderColor: `${C.gold}40`,
   },
-  xpBadgeText: { color: COLORS.gold, fontSize: 13, fontWeight: "600" },
+  xpBadgeText: { color: C.gold, fontSize: 13, fontWeight: "600" },
   xpBarContainer: { width: "100%", marginTop: 12 },
-  xpBarBg: { height: 6, backgroundColor: COLORS.bgCard, borderRadius: 3, overflow: "hidden" },
-  xpBarFill: { height: "100%", backgroundColor: COLORS.primary, borderRadius: 3 },
-  xpBarLabel: { color: COLORS.textMuted, fontSize: 11, marginTop: 4, textAlign: "center" },
+  xpBarBg: { height: 6, backgroundColor: C.bgCard, borderRadius: 3, overflow: "hidden" },
+  xpBarFill: { height: "100%", backgroundColor: C.primary, borderRadius: 3 },
+  xpBarLabel: { color: C.textMuted, fontSize: 11, marginTop: 4, textAlign: "center" },
   statsRow: {
-    flexDirection: "row",
-    backgroundColor: COLORS.bgCard,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.bgCardBorder,
+    flexDirection: "row", backgroundColor: C.bgCard,
+    borderRadius: 16, padding: 16,
+    borderWidth: 1, borderColor: C.bgCardBorder,
     marginBottom: 24,
   },
   statBox: { flex: 1, alignItems: "center" },
-  statValue: { color: COLORS.textPrimary, fontSize: 22, fontWeight: "700" },
-  statLabel: { color: COLORS.textMuted, fontSize: 12, marginTop: 2 },
-  statDivider: { width: 1, backgroundColor: COLORS.bgCardBorder },
-  sectionTitle: { color: COLORS.textPrimary, fontSize: 16, fontWeight: "700", marginBottom: 16 },
-  label: { color: COLORS.textSecondary, fontSize: 13, fontWeight: "600", marginBottom: 8, marginTop: 12 },
+  statValue: { color: C.textPrimary, fontSize: 22, fontWeight: "700" },
+  statLabel: { color: C.textMuted, fontSize: 12, marginTop: 2 },
+  statDivider: { width: 1, backgroundColor: C.bgCardBorder },
+  sectionTitle: { color: C.textPrimary, fontSize: 16, fontWeight: "700", marginBottom: 16 },
+  label: { color: C.textSecondary, fontSize: 13, fontWeight: "600", marginBottom: 8, marginTop: 12 },
   chipRow: { flexDirection: "row", gap: 8, paddingVertical: 4, marginBottom: 4 },
   chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: COLORS.bgCard,
-    borderWidth: 1,
-    borderColor: COLORS.bgCardBorder,
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+    backgroundColor: C.bgCard,
+    borderWidth: 1, borderColor: C.bgCardBorder,
   },
-  chipActive: { backgroundColor: `${COLORS.primary}30`, borderColor: COLORS.primary },
-  chipText: { color: COLORS.textMuted, fontSize: 12 },
-  chipTextActive: { color: COLORS.primary, fontWeight: "600" },
+  chipActive: { backgroundColor: `${C.primary}30`, borderColor: C.primary },
+  chipText: { color: C.textMuted, fontSize: 12 },
+  chipTextActive: { color: C.primary, fontWeight: "600" },
   input: {
-    backgroundColor: "#0F172A",
-    borderWidth: 1,
-    borderColor: COLORS.bgCardBorder,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    color: COLORS.textPrimary,
-    fontSize: 15,
+    backgroundColor: C.bgInput,
+    borderWidth: 1, borderColor: C.bgCardBorder,
+    borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12,
+    color: C.textPrimary, fontSize: 15,
   },
   niveauRow: { flexDirection: "row", gap: 10, marginBottom: 8 },
   niveauBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: COLORS.bgCard,
-    borderWidth: 1,
-    borderColor: COLORS.bgCardBorder,
+    flex: 1, paddingVertical: 12, borderRadius: 12,
+    backgroundColor: C.bgCard,
+    borderWidth: 1, borderColor: C.bgCardBorder,
     alignItems: "center",
   },
-  niveauBtnActive: { backgroundColor: `${COLORS.primary}30`, borderColor: COLORS.primary },
-  niveauBtnText: { color: COLORS.textMuted, fontSize: 14 },
-  niveauBtnTextActive: { color: COLORS.primary, fontWeight: "600" },
+  niveauBtnActive: { backgroundColor: `${C.primary}30`, borderColor: C.primary },
+  niveauBtnText: { color: C.textMuted, fontSize: 14 },
+  niveauBtnTextActive: { color: C.primary, fontWeight: "600" },
   saveBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: COLORS.primary,
-    borderRadius: 14,
-    paddingVertical: 16,
-    marginTop: 20,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: C.primary,
+    borderRadius: 14, paddingVertical: 16, marginTop: 20,
+    shadowColor: C.primary,
+    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8,
     elevation: 6,
   },
   saveBtnDisabled: { opacity: 0.5 },
   saveBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
   logoutBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: `${COLORS.error}15`,
-    borderRadius: 14,
-    paddingVertical: 14,
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: `${COLORS.error}40`,
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: `${C.error}15`,
+    borderRadius: 14, paddingVertical: 14, marginTop: 12,
+    borderWidth: 1, borderColor: `${C.error}40`,
   },
-  logoutBtnText: { color: COLORS.error, fontWeight: "600", fontSize: 15 },
-  version: { color: COLORS.textMuted, fontSize: 11, textAlign: "center", marginTop: 32 },
+  logoutBtnText: { color: C.error, fontWeight: "600", fontSize: 15 },
+  version: { color: C.textMuted, fontSize: 11, textAlign: "center", marginTop: 32 },
+  themeRow: {
+    flexDirection: "row", alignItems: "center", gap: 14,
+    backgroundColor: C.bgCard,
+    borderRadius: 14, padding: 16,
+    borderWidth: 1, borderColor: C.bgCardBorder,
+    marginBottom: 24,
+  },
+  themeIconWrap: {
+    width: 40, height: 40, borderRadius: 10,
+    backgroundColor: `${C.primary}20`,
+    alignItems: "center", justifyContent: "center",
+  },
+  themeLabel: { color: C.textPrimary, fontSize: 15, fontWeight: "600" },
+  themeSub: { color: C.textMuted, fontSize: 12, marginTop: 2 },
+  themeSwitch: {
+    width: 44, height: 26, borderRadius: 13,
+    backgroundColor: C.bgCardBorder,
+    padding: 2, justifyContent: "center",
+  },
+  themeSwitchOn: { backgroundColor: C.primary },
+  themeSwitchKnob: {
+    width: 22, height: 22, borderRadius: 11,
+    backgroundColor: "#fff",
+  },
+  themeSwitchKnobOn: { transform: [{ translateX: 18 }] },
 });

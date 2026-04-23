@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, useAuthStore, useProfilStore } from "@/store";
+import { useColors, type Colors, useAuthStore, useProfilStore } from "@/store";
 import { profilApi, abonnementApi, emploiApi, marchesApi } from "@/api/client";
 
 interface StatCard {
@@ -20,13 +20,6 @@ interface StatCard {
   sub?: string;
 }
 
-const QUICK_ACTIONS = [
-  { label: "Yukpo Pro",    desc: "Assistant & agents spécialisés", icon: "chatbubble-ellipses-outline", tab: "YukpoIA", color: COLORS.primary },
-  { label: "Réunions",     desc: "Enregistrement & transcription", icon: "people-outline",        tab: "Reunions",   color: "#3B82F6" },
-  { label: "Mon profil",   desc: "Personnaliser l'assistant", icon: "person-outline",              tab: "Profil",     color: "#22C55E" },
-  { label: "Abonnement",   desc: "Gérer mon plan",            icon: "card-outline",                tab: "Abonnement", color: COLORS.gold },
-];
-
 const XP_LEVELS = [
   { level: 1, name: "Starter", xp: 0 },
   { level: 2, name: "Praticien", xp: 500 },
@@ -36,6 +29,9 @@ const XP_LEVELS = [
 ];
 
 export const DashboardScreen = ({ navigation }: any) => {
+  const C = useColors();
+  const styles = useMemo(() => makeStyles(C), [C]);
+
   const { user } = useAuthStore();
   const { profil, setProfil } = useProfilStore();
   const [abonnement, setAbonnement] = useState<Record<string,any> | null>(null);
@@ -43,6 +39,13 @@ export const DashboardScreen = ({ navigation }: any) => {
   const [marches, setMarches]           = useState<Array<Record<string,any>>>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const QUICK_ACTIONS = [
+    { label: "Yukpo Pro",    desc: "Assistant & agents spécialisés", icon: "chatbubble-ellipses-outline", tab: "YukpoIA",    color: C.primary },
+    { label: "Réunions",     desc: "Enregistrement & transcription", icon: "people-outline",              tab: "Reunions",   color: "#3B82F6" },
+    { label: "Mon profil",   desc: "Personnaliser l'assistant",      icon: "person-outline",              tab: "Profil",     color: "#22C55E" },
+    { label: "Abonnement",   desc: "Gérer mon plan",                 icon: "card-outline",                tab: "Abonnement", color: C.gold },
+  ];
 
   const xp = (profil as any)?.xp_points || 0;
   const currentLevel = XP_LEVELS.filter((l) => l.xp <= xp).pop() || XP_LEVELS[0];
@@ -52,34 +55,10 @@ export const DashboardScreen = ({ navigation }: any) => {
     : 100;
 
   const stats: StatCard[] = [
-    {
-      label: "Niveau",
-      value: currentLevel.name,
-      icon: "star-outline",
-      color: COLORS.gold,
-      sub: `${xp} XP`,
-    },
-    {
-      label: "Requêtes",
-      value: (profil as any)?.nombre_requetes || 0,
-      icon: "chatbubble-outline",
-      color: COLORS.primary,
-      sub: "Total",
-    },
-    {
-      label: "Documents",
-      value: (profil as any)?.nombre_documents || 0,
-      icon: "document-outline",
-      color: COLORS.accent,
-      sub: "Générés",
-    },
-    {
-      label: "Pays",
-      value: (profil as any)?.pays || "—",
-      icon: "location-outline",
-      color: "#22C55E",
-      sub: (profil as any)?.metier || "",
-    },
+    { label: "Niveau",    value: currentLevel.name,                     icon: "star-outline",     color: C.gold,    sub: `${xp} XP` },
+    { label: "Requêtes",  value: (profil as any)?.nombre_requetes || 0, icon: "chatbubble-outline", color: C.primary, sub: "Total" },
+    { label: "Documents", value: (profil as any)?.nombre_documents || 0, icon: "document-outline",  color: C.accent,  sub: "Générés" },
+    { label: "Pays",      value: (profil as any)?.pays || "—",          icon: "location-outline", color: "#22C55E", sub: (profil as any)?.metier || "" },
   ];
 
   const prenom = (user as any)?.prenom || (user as any)?.nom?.split(" ")[0] || "Pro";
@@ -103,15 +82,12 @@ export const DashboardScreen = ({ navigation }: any) => {
 
   useEffect(() => { loadData(); }, []);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadData();
-  };
+  const onRefresh = () => { setRefreshing(true); loadData(); };
 
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={COLORS.primary} size="large" />
+        <ActivityIndicator color={C.primary} size="large" />
       </View>
     );
   }
@@ -121,9 +97,8 @@ export const DashboardScreen = ({ navigation }: any) => {
       style={styles.container}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />}
     >
-      {/* Header */}
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>Bonjour, {prenom} 👋</Text>
@@ -137,7 +112,6 @@ export const DashboardScreen = ({ navigation }: any) => {
         </View>
       </View>
 
-      {/* XP Bar */}
       {nextLevel && (
         <View style={styles.xpBar}>
           <View style={styles.xpBarRow}>
@@ -150,7 +124,6 @@ export const DashboardScreen = ({ navigation }: any) => {
         </View>
       )}
 
-      {/* Quota mensuel */}
       {abonnement && (
         <View style={styles.quotaCard}>
           <View style={styles.quotaRow}>
@@ -163,13 +136,12 @@ export const DashboardScreen = ({ navigation }: any) => {
             <View style={[
               styles.quotaFill,
               { width: `${abonnement.quota_jour === 9999 ? 5 : Math.min(100, ((abonnement.requetes_utilisees || 0) / (abonnement.quota_jour || 1)) * 100)}%`,
-                backgroundColor: ((abonnement.requetes_utilisees || 0) / (abonnement.quota_jour || 1)) > 0.85 ? "#EF4444" : COLORS.primary }
+                backgroundColor: ((abonnement.requetes_utilisees || 0) / (abonnement.quota_jour || 1)) > 0.85 ? C.error : C.primary }
             ]} />
           </View>
         </View>
       )}
 
-      {/* Stats */}
       <View style={styles.statsGrid}>
         {stats.map((s) => (
           <View key={s.label} style={styles.statCard}>
@@ -183,7 +155,6 @@ export const DashboardScreen = ({ navigation }: any) => {
         ))}
       </View>
 
-      {/* Quick Actions */}
       <Text style={styles.sectionTitle}>Actions rapides</Text>
       <View style={styles.actionsGrid}>
         {QUICK_ACTIONS.map((a) => (
@@ -199,12 +170,11 @@ export const DashboardScreen = ({ navigation }: any) => {
               <Text style={styles.actionLabel}>{a.label}</Text>
               <Text style={styles.actionDesc}>{a.desc}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
+            <Ionicons name="chevron-forward" size={16} color={C.textMuted} />
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* Offres d'emploi */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Offres d'emploi matchées</Text>
         <TouchableOpacity onPress={() => navigation.navigate("Emploi")}>
@@ -213,7 +183,7 @@ export const DashboardScreen = ({ navigation }: any) => {
       </View>
       {offresEmploi.length === 0 ? (
         <TouchableOpacity style={styles.emptyOffreCard} onPress={() => navigation.navigate("Emploi")}>
-          <Ionicons name="briefcase-outline" size={28} color={COLORS.textMuted} />
+          <Ionicons name="briefcase-outline" size={28} color={C.textMuted} />
           <Text style={styles.emptyOffreText}>Configurer la veille emploi</Text>
         </TouchableOpacity>
       ) : (
@@ -245,14 +215,13 @@ export const DashboardScreen = ({ navigation }: any) => {
         </View>
       )}
 
-      {/* Marchés publics */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Marchés publics</Text>
         <Text style={styles.sectionSub}>Mis à jour toutes les 6h</Text>
       </View>
       {marches.length === 0 ? (
         <View style={styles.emptyOffreCard}>
-          <Ionicons name="hammer-outline" size={28} color={COLORS.textMuted} />
+          <Ionicons name="hammer-outline" size={28} color={C.textMuted} />
           <Text style={styles.emptyOffreText}>Aucun appel d'offres récent</Text>
           <Text style={[styles.emptyOffreText, { fontSize: 11 }]}>
             Yukpo surveille ARMP, dgMarket, UNGM et plateformes nationales
@@ -273,17 +242,11 @@ export const DashboardScreen = ({ navigation }: any) => {
               <View style={styles.marcheInfo}>
                 <Text style={styles.marcheTitre} numberOfLines={2}>{m.titre}</Text>
                 <View style={{ flexDirection: "row", gap: 8, marginTop: 3, flexWrap: "wrap" }}>
-                  {m.organisme ? (
-                    <Text style={styles.marcheOrganisme} numberOfLines={1}>{m.organisme}</Text>
-                  ) : null}
-                  {m.source ? (
-                    <Text style={styles.marcheSource} numberOfLines={1}>{m.source}</Text>
-                  ) : null}
+                  {m.organisme ? (<Text style={styles.marcheOrganisme} numberOfLines={1}>{m.organisme}</Text>) : null}
+                  {m.source ? (<Text style={styles.marcheSource} numberOfLines={1}>{m.source}</Text>) : null}
                 </View>
               </View>
-              {m.url ? (
-                <Ionicons name="open-outline" size={14} color={COLORS.textMuted} style={{ flexShrink: 0 }} />
-              ) : null}
+              {m.url ? (<Ionicons name="open-outline" size={14} color={C.textMuted} style={{ flexShrink: 0 }} />) : null}
             </TouchableOpacity>
           ))}
         </View>
@@ -293,83 +256,78 @@ export const DashboardScreen = ({ navigation }: any) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
+const makeStyles = (C: Colors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
   content: { padding: 20, paddingBottom: 32 },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: COLORS.bg },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  greeting: { color: COLORS.textPrimary, fontSize: 22, fontWeight: "700" },
-  subGreeting: { color: COLORS.textMuted, fontSize: 13, marginTop: 2, textTransform: "capitalize" },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: C.bg },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 },
+  greeting: { color: C.textPrimary, fontSize: 22, fontWeight: "700" },
+  subGreeting: { color: C.textMuted, fontSize: 13, marginTop: 2, textTransform: "capitalize" },
   xpBadge: {
-    backgroundColor: `${COLORS.gold}20`,
+    backgroundColor: `${C.gold}20`,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: `${COLORS.gold}40`,
+    borderColor: `${C.gold}40`,
   },
-  xpBadgeLevel: { color: COLORS.gold, fontSize: 11, fontWeight: "700" },
-  xpBadgeName: { color: COLORS.gold, fontSize: 12, fontWeight: "600" },
+  xpBadgeLevel: { color: C.gold, fontSize: 11, fontWeight: "700" },
+  xpBadgeName: { color: C.gold, fontSize: 12, fontWeight: "600" },
   xpBar: { marginBottom: 20 },
   xpBarRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
-  xpBarLabel: { color: COLORS.textMuted, fontSize: 11 },
-  xpBarBg: { height: 6, backgroundColor: COLORS.bgCard, borderRadius: 3, overflow: "hidden" },
-  xpBarFill: { height: "100%", backgroundColor: COLORS.primary, borderRadius: 3 },
+  xpBarLabel: { color: C.textMuted, fontSize: 11 },
+  xpBarBg: { height: 6, backgroundColor: C.bgCard, borderRadius: 3, overflow: "hidden" },
+  xpBarFill: { height: "100%", backgroundColor: C.primary, borderRadius: 3 },
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 24 },
   statCard: {
     width: "47%",
-    backgroundColor: COLORS.bgCard,
+    backgroundColor: C.bgCard,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: COLORS.bgCardBorder,
+    borderColor: C.bgCardBorder,
   },
   statIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center", marginBottom: 10 },
-  statValue: { color: COLORS.textPrimary, fontSize: 18, fontWeight: "700" },
-  statLabel: { color: COLORS.textMuted, fontSize: 12, marginTop: 2 },
-  statSub: { color: COLORS.textSecondary, fontSize: 11, marginTop: 2, textTransform: "capitalize" },
-  sectionTitle: { color: COLORS.textPrimary, fontSize: 16, fontWeight: "700", marginBottom: 12 },
+  statValue: { color: C.textPrimary, fontSize: 18, fontWeight: "700" },
+  statLabel: { color: C.textMuted, fontSize: 12, marginTop: 2 },
+  statSub: { color: C.textSecondary, fontSize: 11, marginTop: 2, textTransform: "capitalize" },
+  sectionTitle: { color: C.textPrimary, fontSize: 16, fontWeight: "700", marginBottom: 12 },
   actionsGrid: { gap: 10, marginBottom: 24 },
   actionCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.bgCard,
+    backgroundColor: C.bgCard,
     borderRadius: 14,
     padding: 16,
     borderWidth: 1,
-    borderColor: COLORS.bgCardBorder,
+    borderColor: C.bgCardBorder,
     gap: 14,
   },
   actionIcon: { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   actionText: { flex: 1 },
-  actionLabel: { color: COLORS.textPrimary, fontSize: 15, fontWeight: "600" },
-  actionDesc: { color: COLORS.textMuted, fontSize: 12, marginTop: 2 },
+  actionLabel: { color: C.textPrimary, fontSize: 15, fontWeight: "600" },
+  actionDesc: { color: C.textMuted, fontSize: 12, marginTop: 2 },
   quotaCard: {
-    backgroundColor: COLORS.bgCard, borderRadius: 14, padding: 14,
-    borderWidth: 1, borderColor: COLORS.bgCardBorder, marginBottom: 20,
+    backgroundColor: C.bgCard, borderRadius: 14, padding: 14,
+    borderWidth: 1, borderColor: C.bgCardBorder, marginBottom: 20,
   },
   quotaRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
-  quotaLabel: { color: COLORS.primary, fontSize: 12, fontWeight: "700" },
-  quotaValue: { color: COLORS.textMuted, fontSize: 12 },
-  quotaBg: { height: 6, backgroundColor: COLORS.bg, borderRadius: 3, overflow: "hidden" },
+  quotaLabel: { color: C.primary, fontSize: 12, fontWeight: "700" },
+  quotaValue: { color: C.textMuted, fontSize: 12 },
+  quotaBg: { height: 6, backgroundColor: C.bg, borderRadius: 3, overflow: "hidden" },
   quotaFill: { height: "100%", borderRadius: 3 },
   sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  sectionLink: { color: COLORS.primary, fontSize: 12 },
-  sectionSub: { color: COLORS.textMuted, fontSize: 11 },
+  sectionLink: { color: C.primary, fontSize: 12 },
+  sectionSub: { color: C.textMuted, fontSize: 11 },
   offreCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.bgCard,
+    backgroundColor: C.bgCard,
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
-    borderColor: COLORS.bgCardBorder,
+    borderColor: C.bgCardBorder,
     gap: 12,
   },
   offreIconWrap: {
@@ -378,19 +336,19 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   offreInfo: { flex: 1 },
-  offreTitre: { color: COLORS.textPrimary, fontSize: 13, fontWeight: "600" },
-  offreEntreprise: { color: COLORS.textMuted, fontSize: 11, marginTop: 2 },
+  offreTitre: { color: C.textPrimary, fontSize: 13, fontWeight: "600" },
+  offreEntreprise: { color: C.textMuted, fontSize: 11, marginTop: 2 },
   offreScore: { fontSize: 13, fontWeight: "700", flexShrink: 0 },
   emptyOffreCard: {
-    backgroundColor: COLORS.bgCard,
+    backgroundColor: C.bgCard,
     borderRadius: 14,
     padding: 20,
     borderWidth: 1,
-    borderColor: COLORS.bgCardBorder,
+    borderColor: C.bgCardBorder,
     alignItems: "center",
     gap: 8,
   },
-  emptyOffreText: { color: COLORS.textMuted, fontSize: 13, textAlign: "center" },
+  emptyOffreText: { color: C.textMuted, fontSize: 13, textAlign: "center" },
   marcheCard: {
     flexDirection: "row", alignItems: "flex-start",
     backgroundColor: "rgba(59,130,246,0.06)",
@@ -404,7 +362,7 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
   marcheInfo: { flex: 1 },
-  marcheTitre: { color: COLORS.textPrimary, fontSize: 13, fontWeight: "600", lineHeight: 18 },
-  marcheOrganisme: { color: COLORS.textMuted, fontSize: 11 },
+  marcheTitre: { color: C.textPrimary, fontSize: 13, fontWeight: "600", lineHeight: 18 },
+  marcheOrganisme: { color: C.textMuted, fontSize: 11 },
   marcheSource: { color: "#60A5FA", fontSize: 11, opacity: 0.8 },
 });
