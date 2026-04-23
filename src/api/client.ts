@@ -11,6 +11,9 @@ import * as SecureStore from "expo-secure-store";
 // En production : URL de production
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.100:8000/api/v1";
 
+export const getApiBaseUrl = () => BASE_URL;
+export const getAuthToken = () => SecureStore.getItemAsync("yukpopro_token");
+
 const http: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 120_000,

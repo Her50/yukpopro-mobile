@@ -1,9 +1,11 @@
 import { create } from "zustand";
+import { pcmRecorder, pcmRecorderAvailable } from "../services/pcm_recorder";
 
 /**
- * Enregistrement audio persistant (mobile).
- * L'objet Recording expo-av et le timer vivent au niveau module pour survivre
- * au démontage React lors de la navigation entre écrans.
+ * Enregistrement audio mobile persistant.
+ * - Mode par défaut (`expo-av`) : WAV/M4A haute qualité, compatible Expo Go.
+ * - Mode PCM (`pcmMode: true`) : 16 kHz mono via react-native-audio-record,
+ *   micro partagé avec translate_live. Nécessite un dev client.
  */
 
 let Audio: any = null;
@@ -11,7 +13,8 @@ try { Audio = require("expo-av").Audio; } catch (_) {}
 
 let _recording: any = null;
 let _timer: ReturnType<typeof setInterval> | null = null;
-let _startDuration = 0;
+let _pcmMode = false;
+let _pcmWavPath: string | null = null;
 
 interface RecorderState {
   isRecording: boolean;
@@ -20,7 +23,7 @@ interface RecorderState {
   uri: string | null;
   supported: boolean;
 
-  start: () => Promise<void>;
+  start: (opts?: { pcmMode?: boolean }) => Promise<void>;
   pauseResume: () => Promise<void>;
   stop: () => Promise<string | null>;
   reset: () => void;
@@ -41,12 +44,23 @@ export const useRecorderStore = create<RecorderState>((set, get) => ({
   isPaused: false,
   duration: 0,
   uri: null,
-  supported: !!Audio,
+  supported: !!Audio || pcmRecorderAvailable,
 
-  start: async () => {
-    if (!Audio) throw new Error("expo-av non installé");
+  start: async (opts) => {
     if (get().isRecording) return;
+    _pcmMode = !!opts?.pcmMode;
 
+    if (_pcmMode) {
+      if (!pcmRecorderAvailable) throw new Error("Dev client requis (react-native-audio-record).");
+      await pcmRecorder.start({ wavFile: "yukpo_reunion.wav" });
+      _pcmWavPath = null;
+      set({ isRecording: true, isPaused: false, duration: 0, uri: null });
+      _stopTick();
+      _startTick();
+      return;
+    }
+
+    if (!Audio) throw new Error("expo-av non installé");
     const { status } = await Audio.requestPermissionsAsync();
     if (status !== "granted") throw new Error("Permission microphone refusée");
 
@@ -74,13 +88,13 @@ export const useRecorderStore = create<RecorderState>((set, get) => ({
 
     const { recording } = await Audio.Recording.createAsync(recordingOptions);
     _recording = recording;
-    _startDuration = 0;
     set({ isRecording: true, isPaused: false, duration: 0, uri: null });
     _stopTick();
     _startTick();
   },
 
   pauseResume: async () => {
+    if (_pcmMode) return; // pause non supportée en mode PCM — arrêt/reprise seulement
     if (!_recording) return;
     try {
       const status = await _recording.getStatusAsync();
@@ -93,11 +107,18 @@ export const useRecorderStore = create<RecorderState>((set, get) => ({
         _startTick();
         set({ isPaused: false });
       }
-    } catch (_) { /* ignore */ }
+    } catch (_) {}
   },
 
   stop: async () => {
     _stopTick();
+    if (_pcmMode) {
+      const path = await pcmRecorder.stop();
+      _pcmWavPath = path;
+      _pcmMode = false;
+      set({ isRecording: false, isPaused: false, uri: path });
+      return path;
+    }
     if (!_recording) {
       set({ isRecording: false, isPaused: false });
       return null;
@@ -117,11 +138,12 @@ export const useRecorderStore = create<RecorderState>((set, get) => ({
 
   reset: () => {
     _stopTick();
+    if (_pcmMode) { try { pcmRecorder.stop(); } catch {} _pcmMode = false; }
     if (_recording) {
       try { _recording.stopAndUnloadAsync(); } catch (_) {}
       _recording = null;
     }
-    _startDuration = 0;
+    _pcmWavPath = null;
     set({ isRecording: false, isPaused: false, duration: 0, uri: null });
   },
 }));

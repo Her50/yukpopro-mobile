@@ -11,8 +11,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import Markdown from "react-native-markdown-display";
 import { useColors, type Colors } from "@/store";
-import { reunionsApi, generateurApi } from "@/api/client";
+import { reunionsApi, generateurApi, getApiBaseUrl, getAuthToken } from "@/api/client";
 import { useRecorderStore } from "@/store/recorderStore";
+import { useTranslateLiveStore } from "@/store/translateLiveStore";
+import { pcmRecorderAvailable } from "@/services/pcm_recorder";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -106,6 +108,15 @@ export const ReunionsScreen = ({ navigation }: any) => {
   const resetRec       = useRecorderStore((s) => s.reset);
   const [transcribing, setTranscribing] = useState(false);
 
+  // Mode rapporteur-traducteur (PCM partagé avec translate_live)
+  const [traduireLive, setTraduireLive] = useState(false);
+  const [langueCible, setLangueCible] = useState("fr");
+  const tlLignes = useTranslateLiveStore((s) => s.lignes);
+  const tlInterim = useTranslateLiveStore((s) => s.currentInterim);
+  const tlActive = useTranslateLiveStore((s) => s.active);
+  const tlStart = useTranslateLiveStore((s) => s.start);
+  const tlStop = useTranslateLiveStore((s) => s.stop);
+
   const resetForm = () => {
     setTitre(""); setDate(today()); setParticipants("");
     setNotes(""); setLangue("auto");
@@ -119,8 +130,29 @@ export const ReunionsScreen = ({ navigation }: any) => {
       Alert.alert("Non disponible", "Installez expo-av pour l'enregistrement audio.\nnpm install expo-av");
       return;
     }
+    if (traduireLive && !pcmRecorderAvailable) {
+      Alert.alert(
+        "Dev client requis",
+        "Le mode rapporteur-traducteur nécessite un build custom (react-native-audio-record).\n\nExécute : npx expo prebuild && eas build --profile development",
+      );
+      return;
+    }
     try {
-      await startRec();
+      await startRec({ pcmMode: traduireLive });
+      if (traduireLive) {
+        const token = await getAuthToken();
+        if (!token) {
+          Alert.alert("Session expirée", "Reconnectez-vous pour activer la traduction live.");
+          return;
+        }
+        await tlStart({
+          token,
+          apiBaseUrl: getApiBaseUrl(),
+          source: langue === "auto" ? "auto" : langue,
+          target: langueCible,
+          onError: (msg) => Alert.alert("Traduction live", msg),
+        });
+      }
     } catch (err: any) {
       Alert.alert("Erreur", err?.message || "Impossible de démarrer l'enregistrement");
     }
@@ -135,6 +167,7 @@ export const ReunionsScreen = ({ navigation }: any) => {
     const enregDuration = duration;
 
     try {
+      if (tlActive) { try { await tlStop(); } catch {} }
       const uri = await stopRec();
       if (!uri) throw new Error("URI audio introuvable");
 
@@ -391,6 +424,42 @@ export const ReunionsScreen = ({ navigation }: any) => {
                 </View>
               )}
 
+              {!isRecording && (
+                <View style={{ marginBottom: 10, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: "rgba(168,85,247,0.35)", backgroundColor: "rgba(168,85,247,0.10)" }}>
+                  <TouchableOpacity
+                    onPress={() => setTraduireLive(!traduireLive)}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+                  >
+                    <Ionicons name={traduireLive ? "checkbox" : "square-outline"} size={18} color="#C4B5FD" />
+                    <Text style={{ color: "#E9D5FF", fontSize: 13, fontWeight: "500" }}>
+                      Traduire en direct pendant la réunion
+                    </Text>
+                  </TouchableOpacity>
+                  {traduireLive && (
+                    <View style={{ marginTop: 8, paddingLeft: 26, flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <Text style={{ color: "#94A3B8", fontSize: 11 }}>Cible :</Text>
+                      {["fr", "en", "es", "ar"].map((code) => (
+                        <TouchableOpacity
+                          key={code}
+                          onPress={() => setLangueCible(code)}
+                          style={{
+                            paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
+                            borderWidth: 1,
+                            borderColor: langueCible === code ? "#A855F7" : "#475569",
+                            backgroundColor: langueCible === code ? "rgba(168,85,247,0.2)" : "transparent",
+                          }}
+                        >
+                          <Text style={{ color: langueCible === code ? "#E9D5FF" : "#94A3B8", fontSize: 11 }}>{code.toUpperCase()}</Text>
+                        </TouchableOpacity>
+                      ))}
+                      {!pcmRecorderAvailable && (
+                        <Text style={{ color: "#FBBF24", fontSize: 10, marginTop: 4 }}>⚠ Dev client requis</Text>
+                      )}
+                    </View>
+                  )}
+                </View>
+              )}
+
               {transcribing ? (
                 <View style={styles.transcribingRow}>
                   <ActivityIndicator size="small" color="#3B82F6" />
@@ -417,6 +486,35 @@ export const ReunionsScreen = ({ navigation }: any) => {
                     <Ionicons name="stop" size={16} color="#fff" />
                     <Text style={styles.recBtnText}>Arrêter et transcrire</Text>
                   </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Panneau traduction live */}
+              {traduireLive && tlActive && (
+                <View style={{ marginTop: 10, padding: 8, borderRadius: 8, backgroundColor: "rgba(88,28,135,0.25)", borderWidth: 1, borderColor: "rgba(168,85,247,0.3)", maxHeight: 200 }}>
+                  <Text style={{ color: "#C4B5FD", fontSize: 11, marginBottom: 6 }}>
+                    Traduction live → {langueCible.toUpperCase()}
+                  </Text>
+                  <ScrollView style={{ maxHeight: 170 }}>
+                    {tlLignes.slice(-6).map((l) => (
+                      <View key={l.utteranceId} style={{ marginBottom: 6 }}>
+                        <Text style={{ color: "#94A3B8", fontSize: 11 }}>
+                          [{l.sourceLang}] {l.source}
+                        </Text>
+                        {!!l.translated && (
+                          <Text style={{ color: "#E9D5FF", fontSize: 11, paddingLeft: 10 }}>
+                            → {l.translated}
+                          </Text>
+                        )}
+                      </View>
+                    ))}
+                    {!!tlInterim && (
+                      <Text style={{ color: "#64748B", fontSize: 11, fontStyle: "italic" }}>{tlInterim}</Text>
+                    )}
+                    {tlLignes.length === 0 && !tlInterim && (
+                      <Text style={{ color: "#64748B", fontSize: 11, fontStyle: "italic" }}>En attente de parole…</Text>
+                    )}
+                  </ScrollView>
                 </View>
               )}
             </View>
