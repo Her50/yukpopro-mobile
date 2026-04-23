@@ -13,6 +13,7 @@ import * as DocumentPicker from "expo-document-picker";
 import { useColors, type Colors } from "@/store";
 import { useNavigation } from "@react-navigation/native";
 import { generateurApi, infographieApi, DocumentHistorique, GabaritInfographie, ResultatInfographieReponse } from "@/api/client";
+import { useGenerateurStore } from "@/store/generateurStore";
 
 type TabType = "rapport" | "slides" | "traduction" | "fichiers" | "conversion" | "historique" | "modeles" | "infographie";
 type InfogMode = "brief" | "manuel" | "modele" | "custom";
@@ -127,9 +128,19 @@ export const GenerateursScreen = () => {
   const C = useColors();
   const styles = useMemo(() => makeStyles(C), [C]);
   const [tab, setTab]       = useState<TabType>("rapport");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ nom_fichier?: string; contenu?: string; url?: string } | null>(null);
   const [openCat, setOpenCat] = useState<string | null>(null);
+
+  // Persistance jobs — survivent à la navigation entre écrans
+  const storeLoading   = useGenerateurStore((s) => s.loading);
+  const storeResultats = useGenerateurStore((s) => s.resultats);
+  const currentJobKey: "rapport" | "slides" | "fichiers" =
+    tab === "slides" ? "slides" : tab === "rapport" ? "rapport" : "fichiers";
+  const loading = storeLoading[currentJobKey];
+  const result = storeResultats[currentJobKey] as { nom_fichier?: string; contenu?: string; url?: string } | null;
+  const setLoading = (v: boolean) =>
+    useGenerateurStore.setState((st) => ({ loading: { ...st.loading, [currentJobKey]: v } }));
+  const setResult = (v: any) =>
+    useGenerateurStore.getState().setResultat(currentJobKey, v);
 
   // Rapport fields
   const [sujetRapport, setSujetRapport]       = useState("");
@@ -164,8 +175,11 @@ export const GenerateursScreen = () => {
   // Conversion de format
   const [fichierConv, setFichierConv]     = useState<{ uri: string; name: string; type: string } | null>(null);
   const [formatCible, setFormatCible]     = useState("docx");
-  const [loadingConv, setLoadingConv]     = useState(false);
-  const [resultatConv, setResultatConv]   = useState<{ fichier_converti: string; format_source: string; format_cible: string } | null>(null);
+  const loadingConv = storeLoading.conversion;
+  const resultatConv = storeResultats.conversion as { fichier_converti: string; format_source: string; format_cible: string } | null;
+  const setLoadingConv = (v: boolean) =>
+    useGenerateurStore.setState((st) => ({ loading: { ...st.loading, conversion: v } }));
+  const setResultatConv = (v: any) => useGenerateurStore.getState().setResultat("conversion", v);
 
   // Historique
   const [historique, setHistorique]       = useState<DocumentHistorique[]>([]);
@@ -178,8 +192,12 @@ export const GenerateursScreen = () => {
   const [infogPalettes, setInfogPalettes] = useState<string[]>([]);
   const [infogGabarit, setInfogGabarit]   = useState<string>("flyer_a5");
   const [infogPays, setInfogPays]         = useState<string>("CM");
-  const [infogLoading, setInfogLoading]   = useState(false);
-  const [infogResult, setInfogResult]     = useState<ResultatInfographieReponse | null>(null);
+  const infogLoading = storeLoading.infographie;
+  const infogResult = storeResultats.infographie as ResultatInfographieReponse | null;
+  const setInfogLoading = (v: boolean) =>
+    useGenerateurStore.setState((st) => ({ loading: { ...st.loading, infographie: v } }));
+  const setInfogResult = (v: ResultatInfographieReponse | null) =>
+    useGenerateurStore.getState().setResultat("infographie", v);
   // brief mode
   const [infogBrief, setInfogBrief]       = useState("");
   // manuel mode

@@ -3,7 +3,7 @@
  * Enregistrement audio (expo-av) + transcription IA multilingue + rapport automatique
  * Identifie automatiquement participants, décisions et plan d'action.
  */
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet,
   Modal, Alert, ActivityIndicator, Share, Platform, Linking,
@@ -12,12 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Markdown from "react-native-markdown-display";
 import { useColors, type Colors } from "@/store";
 import { reunionsApi, generateurApi } from "@/api/client";
-
-// Audio — expo-av (optionnel : si non installé, mode notes uniquement)
-let Audio: any = null;
-try {
-  Audio = require("expo-av").Audio;
-} catch (_) {}
+import { useRecorderStore } from "@/store/recorderStore";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -100,120 +95,47 @@ export const ReunionsScreen = ({ navigation }: any) => {
   const [langue,       setLangue]       = useState("auto");
   const [formLoading,  setFormLoading]  = useState(false);
 
-  // Enregistrement
-  const recordingRef = useRef<any>(null);
-  const timerRef     = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [isRecording,  setIsRecording]  = useState(false);
-  const [isPaused,     setIsPaused]     = useState(false);
-  const [duration,     setDuration]     = useState(0);
+  // Enregistrement (persistant via recorderStore)
+  const isRecording    = useRecorderStore((s) => s.isRecording);
+  const isPaused       = useRecorderStore((s) => s.isPaused);
+  const duration       = useRecorderStore((s) => s.duration);
+  const audioSupported = useRecorderStore((s) => s.supported);
+  const startRec       = useRecorderStore((s) => s.start);
+  const pauseResumeRec = useRecorderStore((s) => s.pauseResume);
+  const stopRec        = useRecorderStore((s) => s.stop);
+  const resetRec       = useRecorderStore((s) => s.reset);
   const [transcribing, setTranscribing] = useState(false);
-  const audioSupported = !!Audio;
-
-  useEffect(() => {
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, []);
 
   const resetForm = () => {
     setTitre(""); setDate(today()); setParticipants("");
-    setNotes(""); setLangue("auto"); setDuration(0);
-    stopRecordingClean();
-  };
-
-  const stopRecordingClean = async () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (recordingRef.current) {
-      try { await recordingRef.current.stopAndUnloadAsync(); } catch (_) {}
-      recordingRef.current = null;
-    }
-    setIsRecording(false);
-    setIsPaused(false);
+    setNotes(""); setLangue("auto");
+    resetRec();
   };
 
   // ── Enregistrement ─────────────────────────────────────────────────────────
 
   const handleStartRecording = async () => {
-    if (!Audio) {
+    if (!audioSupported) {
       Alert.alert("Non disponible", "Installez expo-av pour l'enregistrement audio.\nnpm install expo-av");
       return;
     }
     try {
-      const { status } = await Audio.requestPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Permission refusée", "Autorisez l'accès au microphone dans les paramètres.");
-        return;
-      }
-
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        interruptionModeIOS: 1,          // mix avec autres apps (évite coupure)
-        shouldDuckAndroid: false,        // ne pas réduire volume sur Android
-        interruptionModeAndroid: 1,
-        playThroughEarpieceAndroid: false,
-      });
-
-      // Options optimisées grande salle : bitrate élevé, 48kHz, gain auto
-      const recordingOptions = {
-        ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
-        android: {
-          ...Audio.RecordingOptionsPresets.HIGH_QUALITY.android,
-          sampleRate: 48000,
-          numberOfChannels: 2,           // stéréo pour capter toute la salle
-          bitRate: 128000,
-        },
-        ios: {
-          ...Audio.RecordingOptionsPresets.HIGH_QUALITY.ios,
-          sampleRate: 48000,
-          numberOfChannels: 2,
-          bitRate: 128000,
-          linearPCMBitDepth: 16,
-          linearPCMIsBigEndian: false,
-          linearPCMIsFloat: false,
-        },
-      };
-
-      const { recording } = await Audio.Recording.createAsync(recordingOptions);
-      recordingRef.current = recording;
-      setIsRecording(true);
-      setIsPaused(false);
-      setDuration(0);
-
-      timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
+      await startRec();
     } catch (err: any) {
-      Alert.alert("Erreur", "Impossible de démarrer l'enregistrement : " + err.message);
+      Alert.alert("Erreur", err?.message || "Impossible de démarrer l'enregistrement");
     }
   };
 
   const handlePauseResume = async () => {
-    if (!recordingRef.current) return;
-    try {
-      const status = await recordingRef.current.getStatusAsync();
-      if (status.isRecording) {
-        await recordingRef.current.pauseAsync();
-        setIsPaused(true);
-        if (timerRef.current) clearInterval(timerRef.current);
-      } else {
-        await recordingRef.current.startAsync();
-        setIsPaused(false);
-        timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
-      }
-    } catch (err) {}
+    await pauseResumeRec();
   };
 
   const handleStopAndTranscribe = async () => {
-    if (!recordingRef.current) return;
-    if (timerRef.current) clearInterval(timerRef.current);
-
     setTranscribing(true);
     const enregDuration = duration;
 
     try {
-      await recordingRef.current.stopAndUnloadAsync();
-      const uri = recordingRef.current.getURI();
-      recordingRef.current = null;
-      setIsRecording(false);
-      setIsPaused(false);
-
+      const uri = await stopRec();
       if (!uri) throw new Error("URI audio introuvable");
 
       const res = await reunionsApi.transcrireDirect(uri, langue);
@@ -224,7 +146,8 @@ export const ReunionsScreen = ({ navigation }: any) => {
           ? `\n[Langue détectée : ${res.langue_detectee}]`
           : "";
       setNotes(prev => (prev.trim() ? prev + "\n\n--- Transcription ---\n" + texte + infos : texte + infos));
-      setDuration(enregDuration);
+      // duration déjà préservée par le store
+      void enregDuration;
       const msg = res.traduit
         ? `Transcrit depuis ${res.langue_detectee} et traduit en ${langue}.\n${texte.length} caractères.`
         : `${texte.length} caractères transcrits (${res.langue_detectee}).`;
