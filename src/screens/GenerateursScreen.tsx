@@ -2,7 +2,7 @@
  * Générateurs — Rapports, Slides, Traduction (texte + fichier), Historique
  * Synchronisé avec YukpoPro Web : historique persistant + traduction fichier
  */
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, ActivityIndicator, Linking, Alert,
@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
-import { COLORS } from "@/store";
+import { useColors, type Colors } from "@/store";
 import { useNavigation } from "@react-navigation/native";
 import { generateurApi, infographieApi, DocumentHistorique, GabaritInfographie, ResultatInfographieReponse } from "@/api/client";
 
@@ -124,6 +124,8 @@ const TYPE_DOC_ICONS: Record<string, string> = {
 };
 
 export const GenerateursScreen = () => {
+  const C = useColors();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const [tab, setTab]       = useState<TabType>("rapport");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ nom_fichier?: string; contenu?: string; url?: string } | null>(null);
@@ -626,7 +628,7 @@ export const GenerateursScreen = () => {
     return (
       <View style={styles.histItem}>
         <View style={styles.histItemIcon}>
-          <Ionicons name={TYPE_DOC_ICONS[item.type_doc] as any || "document-outline"} size={18} color={COLORS.primary} />
+          <Ionicons name={TYPE_DOC_ICONS[item.type_doc] as any || "document-outline"} size={18} color={C.primary} />
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={styles.histItemTitre} numberOfLines={2}>{item.titre}</Text>
@@ -635,11 +637,11 @@ export const GenerateursScreen = () => {
         <View style={styles.histActions}>
           {item.fichier && (
             <TouchableOpacity onPress={() => handleDownload(item.fichier!)} style={styles.histBtn}>
-              <Ionicons name="download-outline" size={17} color={COLORS.accent} />
+              <Ionicons name="download-outline" size={17} color={C.accent} />
             </TouchableOpacity>
           )}
           <TouchableOpacity onPress={() => supprimerDoc(item.id)} style={styles.histBtn}>
-            <Ionicons name="trash-outline" size={17} color={COLORS.error} />
+            <Ionicons name="trash-outline" size={17} color={C.error} />
           </TouchableOpacity>
         </View>
       </View>
@@ -672,7 +674,7 @@ export const GenerateursScreen = () => {
             style={[styles.tab, tab === t.key && styles.tabActive]}
             onPress={() => { setTab(t.key); setResult(null); }}
           >
-            <Ionicons name={t.icon as any} size={15} color={tab === t.key ? COLORS.primary : COLORS.textMuted} />
+            <Ionicons name={t.icon as any} size={15} color={tab === t.key ? C.primary : C.textMuted} />
             <Text style={[styles.tabLabel, tab === t.key && styles.tabLabelActive]}>
               {t.label}{t.key === "historique" && historique.length > 0 ? ` (${historique.length})` : ""}
             </Text>
@@ -683,7 +685,7 @@ export const GenerateursScreen = () => {
       {/* ── Modèles — Accordéon ── */}
       {tab === "modeles" ? (
         <ScrollView contentContainerStyle={styles.modelesContent} showsVerticalScrollIndicator={false}>
-          <Text style={{ color: COLORS.textMuted, fontSize: 11, marginBottom: 12 }}>
+          <Text style={{ color: C.textMuted, fontSize: 11, marginBottom: 12 }}>
             {TEMPLATES.reduce((s, c) => s + c.templates.length, 0)} modèles — appuyez sur une rubrique
           </Text>
           {TEMPLATES.map((cat) => {
@@ -691,25 +693,25 @@ export const GenerateursScreen = () => {
             const nDocx = cat.templates.filter(t => t.type === "rapport").length;
             const nPptx = cat.templates.filter(t => t.type === "slides").length;
             return (
-              <View key={cat.categorie} style={{ marginBottom: 8, borderRadius: 12, borderWidth: 1, borderColor: COLORS.bgCardBorder, overflow: "hidden" }}>
+              <View key={cat.categorie} style={{ marginBottom: 8, borderRadius: 12, borderWidth: 1, borderColor: C.bgCardBorder, overflow: "hidden" }}>
                 {/* En-tête accordéon */}
                 <TouchableOpacity
                   activeOpacity={0.7}
                   onPress={() => setOpenCat(isOpen ? null : cat.categorie)}
-                  style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 12, backgroundColor: COLORS.bgCard }}
+                  style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 12, backgroundColor: C.bgCard }}
                 >
                   <View style={{ flexDirection: "row", alignItems: "center", flex: 1, gap: 10 }}>
                     <Text style={{ fontSize: 22 }}>{cat.emoji}</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ color: COLORS.textPrimary, fontSize: 13, fontWeight: "700" }}>{cat.categorie}</Text>
+                      <Text style={{ color: C.textPrimary, fontSize: 13, fontWeight: "700" }}>{cat.categorie}</Text>
                       <View style={{ flexDirection: "row", gap: 8, marginTop: 2 }}>
-                        <Text style={{ color: COLORS.textMuted, fontSize: 10 }}>{cat.templates.length} modèle{cat.templates.length > 1 ? "s" : ""}</Text>
+                        <Text style={{ color: C.textMuted, fontSize: 10 }}>{cat.templates.length} modèle{cat.templates.length > 1 ? "s" : ""}</Text>
                         {nDocx > 0 && <Text style={{ color: "#93C5FD", fontSize: 10, fontWeight: "600" }}>{nDocx} DOCX</Text>}
                         {nPptx > 0 && <Text style={{ color: "#C4B5FD", fontSize: 10, fontWeight: "600" }}>{nPptx} PPTX</Text>}
                       </View>
                     </View>
                   </View>
-                  <Ionicons name={isOpen ? "chevron-up" : "chevron-down"} size={16} color={COLORS.textMuted} />
+                  <Ionicons name={isOpen ? "chevron-up" : "chevron-down"} size={16} color={C.textMuted} />
                 </TouchableOpacity>
 
                 {/* Grille 2 colonnes — visible uniquement si ouvert */}
@@ -718,7 +720,7 @@ export const GenerateursScreen = () => {
                     {cat.templates.map((tpl) => (
                       <TouchableOpacity
                         key={tpl.label}
-                        style={{ width: "48%", backgroundColor: COLORS.bgCard, borderRadius: 12, padding: 10, borderWidth: 1, borderColor: COLORS.bgCardBorder }}
+                        style={{ width: "48%", backgroundColor: C.bgCard, borderRadius: 12, padding: 10, borderWidth: 1, borderColor: C.bgCardBorder }}
                         activeOpacity={0.7}
                         onPress={() => {
                           if (tpl.type === "rapport") {
@@ -734,17 +736,17 @@ export const GenerateursScreen = () => {
                         }}
                       >
                         <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 4 }}>
-                          <Text style={{ color: COLORS.textPrimary, fontSize: 11, fontWeight: "700", flex: 1, marginRight: 4 }} numberOfLines={2}>{tpl.label}</Text>
+                          <Text style={{ color: C.textPrimary, fontSize: 11, fontWeight: "700", flex: 1, marginRight: 4 }} numberOfLines={2}>{tpl.label}</Text>
                           <View style={{ paddingHorizontal: 5, paddingVertical: 2, borderRadius: 8, backgroundColor: tpl.type === "rapport" ? "rgba(96,165,250,0.15)" : "rgba(167,139,250,0.15)" }}>
                             <Text style={{ color: tpl.type === "rapport" ? "#93C5FD" : "#C4B5FD", fontSize: 9, fontWeight: "700" }}>
                               {tpl.type === "rapport" ? "DOCX" : "PPTX"}
                             </Text>
                           </View>
                         </View>
-                        <Text style={{ color: COLORS.textMuted, fontSize: 10, lineHeight: 14 }} numberOfLines={2}>{tpl.desc}</Text>
+                        <Text style={{ color: C.textMuted, fontSize: 10, lineHeight: 14 }} numberOfLines={2}>{tpl.desc}</Text>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginTop: 6 }}>
-                          <Ionicons name="arrow-forward-circle-outline" size={12} color={COLORS.primary} />
-                          <Text style={{ color: COLORS.primary, fontSize: 10, fontWeight: "600" }}>Utiliser</Text>
+                          <Ionicons name="arrow-forward-circle-outline" size={12} color={C.primary} />
+                          <Text style={{ color: C.primary, fontSize: 10, fontWeight: "600" }}>Utiliser</Text>
                         </View>
                       </TouchableOpacity>
                     ))}
@@ -767,10 +769,10 @@ export const GenerateursScreen = () => {
             ] as const).map(m => (
               <TouchableOpacity key={m.id} onPress={() => setInfogMode(m.id as InfogMode)}
                 style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, borderWidth: 1,
-                  borderColor: infogMode === m.id ? "#A78BFA" : COLORS.bgCardBorder,
-                  backgroundColor: infogMode === m.id ? "rgba(167,139,250,0.18)" : COLORS.bgCard }}>
-                <Ionicons name={m.icon as any} size={14} color={infogMode === m.id ? "#A78BFA" : COLORS.textMuted} />
-                <Text style={{ color: infogMode === m.id ? "#A78BFA" : COLORS.textMuted, fontSize: 12, fontWeight: "600" }}>{m.label}</Text>
+                  borderColor: infogMode === m.id ? "#A78BFA" : C.bgCardBorder,
+                  backgroundColor: infogMode === m.id ? "rgba(167,139,250,0.18)" : C.bgCard }}>
+                <Ionicons name={m.icon as any} size={14} color={infogMode === m.id ? "#A78BFA" : C.textMuted} />
+                <Text style={{ color: infogMode === m.id ? "#A78BFA" : C.textMuted, fontSize: 12, fontWeight: "600" }}>{m.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -779,16 +781,16 @@ export const GenerateursScreen = () => {
           {infogMode !== "custom" && (
             <>
               <Text style={styles.label}>Gabarit {gabaritCourant && <Text style={{ color: "#A78BFA" }}>· {gabaritCourant.prix_fcfa.toLocaleString("fr-FR")} FCFA = {gabaritCourant.prix_fcfa} crédits</Text>}</Text>
-              <ScrollView style={{ maxHeight: 180, borderRadius: 12, borderWidth: 1, borderColor: COLORS.bgCardBorder, marginBottom: 12 }}>
+              <ScrollView style={{ maxHeight: 180, borderRadius: 12, borderWidth: 1, borderColor: C.bgCardBorder, marginBottom: 12 }}>
                 {Object.entries(gabaritsParCategorie).map(([cat, items]) => (
                   <View key={cat}>
-                    <Text style={{ color: COLORS.textMuted, fontSize: 11, fontWeight: "700", paddingHorizontal: 10, paddingVertical: 6, backgroundColor: COLORS.bgCard, textTransform: "uppercase" }}>{cat}</Text>
+                    <Text style={{ color: C.textMuted, fontSize: 11, fontWeight: "700", paddingHorizontal: 10, paddingVertical: 6, backgroundColor: C.bgCard, textTransform: "uppercase" }}>{cat}</Text>
                     {items.map(g => (
                       <TouchableOpacity key={g.cle} onPress={() => setInfogGabarit(g.cle)}
                         style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 10, paddingVertical: 8,
                           backgroundColor: infogGabarit === g.cle ? "rgba(167,139,250,0.15)" : "transparent" }}>
-                        <Text style={{ color: infogGabarit === g.cle ? "#A78BFA" : COLORS.textPrimary, fontSize: 13, flex: 1 }}>{g.libelle}</Text>
-                        <Text style={{ color: COLORS.textMuted, fontSize: 11 }}>{g.prix_fcfa.toLocaleString("fr-FR")} FCFA</Text>
+                        <Text style={{ color: infogGabarit === g.cle ? "#A78BFA" : C.textPrimary, fontSize: 13, flex: 1 }}>{g.libelle}</Text>
+                        <Text style={{ color: C.textMuted, fontSize: 11 }}>{g.prix_fcfa.toLocaleString("fr-FR")} FCFA</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -806,9 +808,9 @@ export const GenerateursScreen = () => {
                   {INFOG_PAYS.map(p => (
                     <TouchableOpacity key={p.id} onPress={() => setInfogPays(p.id)}
                       style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1,
-                        borderColor: infogPays === p.id ? "#A78BFA" : COLORS.bgCardBorder,
-                        backgroundColor: infogPays === p.id ? "rgba(167,139,250,0.18)" : COLORS.bgCard }}>
-                      <Text style={{ color: infogPays === p.id ? "#A78BFA" : COLORS.textMuted, fontSize: 11 }}>{p.label}</Text>
+                        borderColor: infogPays === p.id ? "#A78BFA" : C.bgCardBorder,
+                        backgroundColor: infogPays === p.id ? "rgba(167,139,250,0.18)" : C.bgCard }}>
+                      <Text style={{ color: infogPays === p.id ? "#A78BFA" : C.textMuted, fontSize: 11 }}>{p.label}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -822,7 +824,7 @@ export const GenerateursScreen = () => {
               <Text style={styles.label}>Brief / Description du besoin *</Text>
               <TextInput value={infogBrief} onChangeText={setInfogBrief} style={[styles.input, styles.textarea]}
                 multiline numberOfLines={5} placeholder="Ex: Flyer pour formation marketing digital à Douala le 15 mars 2026, public PME, prix 50 000 FCFA, contact +237 6XX XX XX XX"
-                placeholderTextColor={COLORS.textMuted} />
+                placeholderTextColor={C.textMuted} />
             </>
           )}
 
@@ -830,22 +832,22 @@ export const GenerateursScreen = () => {
           {infogMode === "manuel" && (
             <>
               <Text style={styles.label}>Titre *</Text>
-              <TextInput value={infogTitre} onChangeText={setInfogTitre} style={styles.input} placeholder="Ex: Formation Marketing Digital" placeholderTextColor={COLORS.textMuted} />
+              <TextInput value={infogTitre} onChangeText={setInfogTitre} style={styles.input} placeholder="Ex: Formation Marketing Digital" placeholderTextColor={C.textMuted} />
               <Text style={styles.label}>Sous-titre</Text>
-              <TextInput value={infogSousTitre} onChangeText={setInfogSousTitre} style={styles.input} placeholder="Accroche secondaire" placeholderTextColor={COLORS.textMuted} />
+              <TextInput value={infogSousTitre} onChangeText={setInfogSousTitre} style={styles.input} placeholder="Accroche secondaire" placeholderTextColor={C.textMuted} />
               <Text style={styles.label}>Corps / Description</Text>
-              <TextInput value={infogCorps} onChangeText={setInfogCorps} style={[styles.input, styles.textarea]} multiline placeholder="Texte principal du visuel" placeholderTextColor={COLORS.textMuted} />
+              <TextInput value={infogCorps} onChangeText={setInfogCorps} style={[styles.input, styles.textarea]} multiline placeholder="Texte principal du visuel" placeholderTextColor={C.textMuted} />
               <Text style={styles.label}>Détails (un par ligne)</Text>
-              <TextInput value={infogDetails} onChangeText={setInfogDetails} style={[styles.input, styles.textarea]} multiline placeholder={"Date · 15 mars 2026\nLieu · Hôtel Hilton, Douala\nPrix · 50 000 FCFA"} placeholderTextColor={COLORS.textMuted} />
+              <TextInput value={infogDetails} onChangeText={setInfogDetails} style={[styles.input, styles.textarea]} multiline placeholder={"Date · 15 mars 2026\nLieu · Hôtel Hilton, Douala\nPrix · 50 000 FCFA"} placeholderTextColor={C.textMuted} />
               <Text style={styles.label}>Palette</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
                 <View style={{ flexDirection: "row", gap: 6 }}>
                   {(infogPalettes.length ? infogPalettes : ["classique", "cameroun", "senegal", "elegance", "moderne"]).map(p => (
                     <TouchableOpacity key={p} onPress={() => setInfogPalette(p)}
                       style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1,
-                        borderColor: infogPalette === p ? "#A78BFA" : COLORS.bgCardBorder,
-                        backgroundColor: infogPalette === p ? "rgba(167,139,250,0.18)" : COLORS.bgCard }}>
-                      <Text style={{ color: infogPalette === p ? "#A78BFA" : COLORS.textMuted, fontSize: 11 }}>{p}</Text>
+                        borderColor: infogPalette === p ? "#A78BFA" : C.bgCardBorder,
+                        backgroundColor: infogPalette === p ? "rgba(167,139,250,0.18)" : C.bgCard }}>
+                      <Text style={{ color: infogPalette === p ? "#A78BFA" : C.textMuted, fontSize: 11 }}>{p}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -853,23 +855,23 @@ export const GenerateursScreen = () => {
               <View style={{ flexDirection: "row", gap: 12 }}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Organisation</Text>
-                  <TextInput value={infogOrg} onChangeText={setInfogOrg} style={styles.input} placeholder="Cabinet …" placeholderTextColor={COLORS.textMuted} />
+                  <TextInput value={infogOrg} onChangeText={setInfogOrg} style={styles.input} placeholder="Cabinet …" placeholderTextColor={C.textMuted} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Contact</Text>
-                  <TextInput value={infogContact} onChangeText={setInfogContact} style={styles.input} placeholder="+237 6XX…" placeholderTextColor={COLORS.textMuted} />
+                  <TextInput value={infogContact} onChangeText={setInfogContact} style={styles.input} placeholder="+237 6XX…" placeholderTextColor={C.textMuted} />
                 </View>
               </View>
               <Text style={styles.label}>Slogan</Text>
-              <TextInput value={infogSlogan} onChangeText={setInfogSlogan} style={styles.input} placeholder="Phrase d'accroche" placeholderTextColor={COLORS.textMuted} />
+              <TextInput value={infogSlogan} onChangeText={setInfogSlogan} style={styles.input} placeholder="Phrase d'accroche" placeholderTextColor={C.textMuted} />
               <View style={{ flexDirection: "row", gap: 12 }}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Date</Text>
-                  <TextInput value={infogDate} onChangeText={setInfogDate} style={styles.input} placeholder="15 mars 2026" placeholderTextColor={COLORS.textMuted} />
+                  <TextInput value={infogDate} onChangeText={setInfogDate} style={styles.input} placeholder="15 mars 2026" placeholderTextColor={C.textMuted} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Lieu</Text>
-                  <TextInput value={infogLieu} onChangeText={setInfogLieu} style={styles.input} placeholder="Hôtel Hilton, Douala" placeholderTextColor={COLORS.textMuted} />
+                  <TextInput value={infogLieu} onChangeText={setInfogLieu} style={styles.input} placeholder="Hôtel Hilton, Douala" placeholderTextColor={C.textMuted} />
                 </View>
               </View>
             </>
@@ -880,16 +882,16 @@ export const GenerateursScreen = () => {
             <>
               <Text style={styles.label}>Image modèle (PNG/JPG) *</Text>
               <TouchableOpacity onPress={choisirModele}
-                style={{ borderWidth: 1, borderStyle: "dashed", borderColor: COLORS.bgCardBorder, borderRadius: 12, padding: 16, alignItems: "center", marginBottom: 12 }}>
-                <Ionicons name="cloud-upload-outline" size={32} color={COLORS.textMuted} />
-                <Text style={{ color: infogModele ? "#A78BFA" : COLORS.textMuted, fontSize: 12, marginTop: 6 }}>
+                style={{ borderWidth: 1, borderStyle: "dashed", borderColor: C.bgCardBorder, borderRadius: 12, padding: 16, alignItems: "center", marginBottom: 12 }}>
+                <Ionicons name="cloud-upload-outline" size={32} color={C.textMuted} />
+                <Text style={{ color: infogModele ? "#A78BFA" : C.textMuted, fontSize: 12, marginTop: 6 }}>
                   {infogModele ? infogModele.name : "Choisir une image à analyser"}
                 </Text>
               </TouchableOpacity>
               <Text style={styles.label}>Brief d'adaptation *</Text>
               <TextInput value={infogBrief} onChangeText={setInfogBrief} style={[styles.input, styles.textarea]}
                 multiline numberOfLines={4} placeholder="Adapte ce visuel pour ma formation X, garde le style mais change …"
-                placeholderTextColor={COLORS.textMuted} />
+                placeholderTextColor={C.textMuted} />
             </>
           )}
 
@@ -899,28 +901,28 @@ export const GenerateursScreen = () => {
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Largeur (mm) *</Text>
-                  <TextInput value={String(infogW)} onChangeText={(v) => setInfogW(Number(v) || 0)} keyboardType="numeric" style={styles.input} placeholderTextColor={COLORS.textMuted} />
+                  <TextInput value={String(infogW)} onChangeText={(v) => setInfogW(Number(v) || 0)} keyboardType="numeric" style={styles.input} placeholderTextColor={C.textMuted} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Hauteur (mm) *</Text>
-                  <TextInput value={String(infogH)} onChangeText={(v) => setInfogH(Number(v) || 0)} keyboardType="numeric" style={styles.input} placeholderTextColor={COLORS.textMuted} />
+                  <TextInput value={String(infogH)} onChangeText={(v) => setInfogH(Number(v) || 0)} keyboardType="numeric" style={styles.input} placeholderTextColor={C.textMuted} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Bleed (mm)</Text>
-                  <TextInput value={String(infogBleed)} onChangeText={(v) => setInfogBleed(Number(v) || 0)} keyboardType="numeric" style={styles.input} placeholderTextColor={COLORS.textMuted} />
+                  <TextInput value={String(infogBleed)} onChangeText={(v) => setInfogBleed(Number(v) || 0)} keyboardType="numeric" style={styles.input} placeholderTextColor={C.textMuted} />
                 </View>
               </View>
               <Text style={styles.label}>Brief *</Text>
               <TextInput value={infogBrief} onChangeText={setInfogBrief} style={[styles.input, styles.textarea]}
                 multiline numberOfLines={4} placeholder="Décrivez le visuel souhaité"
-                placeholderTextColor={COLORS.textMuted} />
+                placeholderTextColor={C.textMuted} />
             </>
           )}
 
           {/* Bouton générer */}
           <TouchableOpacity onPress={genererInfographie} disabled={infogLoading}
             style={{ marginTop: 16, paddingVertical: 14, borderRadius: 14, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8,
-              backgroundColor: infogLoading ? COLORS.bgCard : "#7B3FE4", opacity: infogLoading ? 0.7 : 1 }}>
+              backgroundColor: infogLoading ? C.bgCard : "#7B3FE4", opacity: infogLoading ? 0.7 : 1 }}>
             {infogLoading
               ? <><ActivityIndicator size="small" color="#fff" /><Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Génération en cours…</Text></>
               : <><Ionicons name="color-palette-outline" size={18} color="#fff" /><Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Générer l'infographie</Text></>}
@@ -928,32 +930,32 @@ export const GenerateursScreen = () => {
 
           {/* Résultat */}
           {infogResult && (
-            <View style={{ marginTop: 20, backgroundColor: COLORS.bgCard, borderRadius: 16, padding: 12, borderWidth: 1, borderColor: COLORS.bgCardBorder }}>
+            <View style={{ marginTop: 20, backgroundColor: C.bgCard, borderRadius: 16, padding: 12, borderWidth: 1, borderColor: C.bgCardBorder }}>
               <Text style={[styles.label, { marginBottom: 8, color: "#A78BFA" }]}>Aperçu (PNG haute qualité)</Text>
               {infogResult.png_base64 ? (
-                <View style={{ aspectRatio: infogResult.width_mm / infogResult.height_mm, borderRadius: 12, overflow: "hidden", backgroundColor: "#0D1117", marginBottom: 8 }}>
+                <View style={{ aspectRatio: infogResult.width_mm / infogResult.height_mm, borderRadius: 12, overflow: "hidden", backgroundColor: C.bg, marginBottom: 8 }}>
                   {/* eslint-disable-next-line @typescript-eslint/no-var-requires */}
                   <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-                    <Text style={{ color: COLORS.textMuted, fontSize: 11, padding: 12, textAlign: "center" }}>
+                    <Text style={{ color: C.textMuted, fontSize: 11, padding: 12, textAlign: "center" }}>
                       Aperçu disponible · ouvrez le PNG depuis Mes Documents
                     </Text>
                   </View>
                 </View>
               ) : null}
-              <Text style={{ color: COLORS.textSecondary, fontSize: 11, textAlign: "center", marginBottom: 8 }}>
+              <Text style={{ color: C.textSecondary, fontSize: 11, textAlign: "center", marginBottom: 8 }}>
                 💳 {infogResult.credits_debites ?? infogResult.prix_gabarit_fcfa} crédits débités · {infogResult.width_mm}×{infogResult.height_mm} mm
               </Text>
               <View style={{ flexDirection: "row", gap: 8 }}>
                 {infogResult.pdf_id && (
                   <TouchableOpacity onPress={() => Linking.openURL(infographieApi.urlTelechargement(infogResult.pdf_id!))}
-                    style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", backgroundColor: COLORS.primary, flexDirection: "row", justifyContent: "center", gap: 6 }}>
+                    style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", backgroundColor: C.primary, flexDirection: "row", justifyContent: "center", gap: 6 }}>
                     <Ionicons name="document-outline" size={14} color="#fff" />
                     <Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>PDF print-ready</Text>
                   </TouchableOpacity>
                 )}
                 {infogResult.png_id && (
                   <TouchableOpacity onPress={() => Linking.openURL(infographieApi.urlTelechargement(infogResult.png_id!))}
-                    style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", backgroundColor: COLORS.bgCardBorder, flexDirection: "row", justifyContent: "center", gap: 6 }}>
+                    style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", backgroundColor: C.bgCardBorder, flexDirection: "row", justifyContent: "center", gap: 6 }}>
                     <Ionicons name="image-outline" size={14} color="#fff" />
                     <Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>PNG aperçu</Text>
                   </TouchableOpacity>
@@ -968,10 +970,10 @@ export const GenerateursScreen = () => {
           keyExtractor={d => d.id.toString()}
           renderItem={renderHistItem}
           contentContainerStyle={styles.histList}
-          refreshControl={<RefreshControl refreshing={histLoading} onRefresh={chargerHistorique} tintColor={COLORS.primary} />}
+          refreshControl={<RefreshControl refreshing={histLoading} onRefresh={chargerHistorique} tintColor={C.primary} />}
           ListEmptyComponent={
             <View style={styles.histEmpty}>
-              <Ionicons name="folder-open-outline" size={48} color={COLORS.textMuted} />
+              <Ionicons name="folder-open-outline" size={48} color={C.textMuted} />
               <Text style={styles.histEmptyText}>Aucun document généré</Text>
               <Text style={styles.histEmptySubtext}>Vos rapports, slides et traductions apparaîtront ici</Text>
             </View>
@@ -987,7 +989,7 @@ export const GenerateursScreen = () => {
               <TextInput
                 style={styles.input}
                 placeholder="Rapport annuel financier 2024..."
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={C.textMuted}
                 value={sujetRapport}
                 onChangeText={setSujetRapport}
               />
@@ -1024,7 +1026,7 @@ export const GenerateursScreen = () => {
               <TextInput
                 style={[styles.input, styles.textarea]}
                 placeholder="Données clés à inclure, conclusions attendues, contexte..."
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={C.textMuted}
                 value={contexteRapport}
                 onChangeText={setContexteRapport}
                 multiline numberOfLines={5} textAlignVertical="top"
@@ -1054,22 +1056,22 @@ export const GenerateursScreen = () => {
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <Text style={styles.label}>Fichiers d'analyse (optionnel)</Text>
                   <TouchableOpacity onPress={() => ajouterFichiersPourTab("rapport")}
-                    style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.bgCardBorder, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 }}>
-                    <Ionicons name="attach-outline" size={14} color={COLORS.primary} />
-                    <Text style={{ color: COLORS.primary, fontSize: 12, fontWeight: "600" }}>Joindre</Text>
+                    style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: C.bgCard, borderWidth: 1, borderColor: C.bgCardBorder, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 }}>
+                    <Ionicons name="attach-outline" size={14} color={C.primary} />
+                    <Text style={{ color: C.primary, fontSize: 12, fontWeight: "600" }}>Joindre</Text>
                   </TouchableOpacity>
                 </View>
                 {fichiersRapport.map((f, i) => (
-                  <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: COLORS.bgCard, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 4, borderWidth: 1, borderColor: COLORS.primary + "40" }}>
-                    <Ionicons name="document-outline" size={14} color={COLORS.primary} />
-                    <Text style={{ flex: 1, color: COLORS.textSecondary, fontSize: 12 }} numberOfLines={1}>{f.name}</Text>
+                  <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: C.bgCard, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 4, borderWidth: 1, borderColor: C.primary + "40" }}>
+                    <Ionicons name="document-outline" size={14} color={C.primary} />
+                    <Text style={{ flex: 1, color: C.textSecondary, fontSize: 12 }} numberOfLines={1}>{f.name}</Text>
                     <TouchableOpacity onPress={() => setFichiersRapport(prev => prev.filter((_, j) => j !== i))}>
-                      <Ionicons name="close-circle-outline" size={16} color={COLORS.textMuted} />
+                      <Ionicons name="close-circle-outline" size={16} color={C.textMuted} />
                     </TouchableOpacity>
                   </View>
                 ))}
                 {fichiersRapport.length > 0 && (
-                  <Text style={{ color: COLORS.primary, fontSize: 11, marginTop: 2 }}>
+                  <Text style={{ color: C.primary, fontSize: 11, marginTop: 2 }}>
                     ✦ Yukpo analysera ces fichiers pour enrichir le rapport
                   </Text>
                 )}
@@ -1097,7 +1099,7 @@ export const GenerateursScreen = () => {
               <TextInput
                 style={styles.input}
                 placeholder="Pitch deck — Projet X"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={C.textMuted}
                 value={sujetSlides}
                 onChangeText={setSujetSlides}
               />
@@ -1141,7 +1143,7 @@ export const GenerateursScreen = () => {
               <TextInput
                 style={[styles.input, styles.textarea]}
                 placeholder="Décrivez le sujet, les sections clés, les données à illustrer..."
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={C.textMuted}
                 value={contexteSlides}
                 onChangeText={setContexteSlides}
                 multiline numberOfLines={5} textAlignVertical="top"
@@ -1152,22 +1154,22 @@ export const GenerateursScreen = () => {
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <Text style={styles.label}>Fichiers d'analyse (optionnel)</Text>
                   <TouchableOpacity onPress={() => ajouterFichiersPourTab("slides")}
-                    style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.bgCardBorder, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 }}>
-                    <Ionicons name="attach-outline" size={14} color={COLORS.primary} />
-                    <Text style={{ color: COLORS.primary, fontSize: 12, fontWeight: "600" }}>Joindre</Text>
+                    style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: C.bgCard, borderWidth: 1, borderColor: C.bgCardBorder, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 }}>
+                    <Ionicons name="attach-outline" size={14} color={C.primary} />
+                    <Text style={{ color: C.primary, fontSize: 12, fontWeight: "600" }}>Joindre</Text>
                   </TouchableOpacity>
                 </View>
                 {fichiersSlides.map((f, i) => (
-                  <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: COLORS.bgCard, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 4, borderWidth: 1, borderColor: COLORS.primary + "40" }}>
-                    <Ionicons name="document-outline" size={14} color={COLORS.primary} />
-                    <Text style={{ flex: 1, color: COLORS.textSecondary, fontSize: 12 }} numberOfLines={1}>{f.name}</Text>
+                  <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: C.bgCard, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, marginBottom: 4, borderWidth: 1, borderColor: C.primary + "40" }}>
+                    <Ionicons name="document-outline" size={14} color={C.primary} />
+                    <Text style={{ flex: 1, color: C.textSecondary, fontSize: 12 }} numberOfLines={1}>{f.name}</Text>
                     <TouchableOpacity onPress={() => setFichiersSlides(prev => prev.filter((_, j) => j !== i))}>
-                      <Ionicons name="close-circle-outline" size={16} color={COLORS.textMuted} />
+                      <Ionicons name="close-circle-outline" size={16} color={C.textMuted} />
                     </TouchableOpacity>
                   </View>
                 ))}
                 {fichiersSlides.length > 0 && (
-                  <Text style={{ color: COLORS.primary, fontSize: 11, marginTop: 2 }}>
+                  <Text style={{ color: C.primary, fontSize: 11, marginTop: 2 }}>
                     ✦ Yukpo analysera ces fichiers pour construire les slides
                   </Text>
                 )}
@@ -1197,14 +1199,14 @@ export const GenerateursScreen = () => {
                   style={[styles.modeBtn, modeTrad === "texte" && styles.modeBtnActive]}
                   onPress={() => setModeTrad("texte")}
                 >
-                  <Ionicons name="text-outline" size={15} color={modeTrad === "texte" ? COLORS.primary : COLORS.textMuted} />
+                  <Ionicons name="text-outline" size={15} color={modeTrad === "texte" ? C.primary : C.textMuted} />
                   <Text style={[styles.modeBtnText, modeTrad === "texte" && styles.modeBtnTextActive]}>Texte</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modeBtn, modeTrad === "fichier" && styles.modeBtnActive]}
                   onPress={() => setModeTrad("fichier")}
                 >
-                  <Ionicons name="attach-outline" size={15} color={modeTrad === "fichier" ? COLORS.primary : COLORS.textMuted} />
+                  <Ionicons name="attach-outline" size={15} color={modeTrad === "fichier" ? C.primary : C.textMuted} />
                   <Text style={[styles.modeBtnText, modeTrad === "fichier" && styles.modeBtnTextActive]}>Fichier</Text>
                 </TouchableOpacity>
               </View>
@@ -1227,7 +1229,7 @@ export const GenerateursScreen = () => {
                   style={styles.swapBtn}
                   onPress={() => { const t = langueSource; setLangueSource(langueCible); setLangueCible(t); }}
                 >
-                  <Ionicons name="swap-horizontal" size={22} color={COLORS.primary} />
+                  <Ionicons name="swap-horizontal" size={22} color={C.primary} />
                 </TouchableOpacity>
                 <View style={styles.langueField}>
                   <Text style={styles.label}>Cible</Text>
@@ -1250,7 +1252,7 @@ export const GenerateursScreen = () => {
                   <TextInput
                     style={[styles.input, styles.textarea]}
                     placeholder="Entrez votre texte professionnel ici..."
-                    placeholderTextColor={COLORS.textMuted}
+                    placeholderTextColor={C.textMuted}
                     value={texte}
                     onChangeText={setTexte}
                     multiline numberOfLines={8} textAlignVertical="top"
@@ -1275,14 +1277,14 @@ export const GenerateursScreen = () => {
                     <Ionicons
                       name={fichierTrad ? "document" : "cloud-upload-outline"}
                       size={22}
-                      color={fichierTrad ? COLORS.primary : COLORS.textMuted}
+                      color={fichierTrad ? C.primary : C.textMuted}
                     />
                     <Text style={[styles.filePickerText, fichierTrad && styles.filePickerTextActive]} numberOfLines={1}>
                       {fichierTrad ? fichierTrad.name : "PDF, DOCX, TXT, Excel, Image…"}
                     </Text>
                     {fichierTrad && (
                       <TouchableOpacity onPress={() => setFichierTrad(null)}>
-                        <Ionicons name="close-circle" size={18} color={COLORS.textMuted} />
+                        <Ionicons name="close-circle" size={18} color={C.textMuted} />
                       </TouchableOpacity>
                     )}
                   </TouchableOpacity>
@@ -1343,7 +1345,7 @@ export const GenerateursScreen = () => {
               <TextInput
                 style={[styles.input, styles.textarea]}
                 placeholder="Ex : Analyse financière approfondie de ces données Excel avec recommandations..."
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={C.textMuted}
                 value={instructionFichiers}
                 onChangeText={setInstructionFichiers}
                 multiline numberOfLines={4} textAlignVertical="top"
@@ -1352,15 +1354,15 @@ export const GenerateursScreen = () => {
               <Text style={styles.label}>Fichiers sources ({fichiersSrc.length} sélectionné{fichiersSrc.length > 1 ? "s" : ""})</Text>
               {fichiersSrc.map((f, i) => (
                 <View key={i} style={styles.fichierItem}>
-                  <Ionicons name="document-outline" size={15} color={COLORS.primary} />
+                  <Ionicons name="document-outline" size={15} color={C.primary} />
                   <Text style={styles.fichierNom} numberOfLines={1}>{f.name}</Text>
                   <TouchableOpacity onPress={() => setFichiersSrc(prev => prev.filter((_,j)=>j!==i))}>
-                    <Ionicons name="close-circle" size={16} color={COLORS.textMuted} />
+                    <Ionicons name="close-circle" size={16} color={C.textMuted} />
                   </TouchableOpacity>
                 </View>
               ))}
               <TouchableOpacity style={styles.filePickerBtn} onPress={ajouterFichiersSrc}>
-                <Ionicons name="cloud-upload-outline" size={22} color={COLORS.textMuted} />
+                <Ionicons name="cloud-upload-outline" size={22} color={C.textMuted} />
                 <Text style={styles.filePickerText}>Ajouter des fichiers (PDF, DOCX, Excel, CSV…)</Text>
               </TouchableOpacity>
 
@@ -1379,13 +1381,13 @@ export const GenerateursScreen = () => {
           {/* ── Conversion de format ──────────────────────────────────────── */}
           {tab === "conversion" && (
             <View style={styles.form}>
-              <Text style={{ color: COLORS.textMuted, fontSize: 13, textAlign: "center", marginBottom: 16 }}>
+              <Text style={{ color: C.textMuted, fontSize: 13, textAlign: "center", marginBottom: 16 }}>
                 Convertissez un fichier vers un autre format{"\n"}PDF→Word, Excel→CSV, Image→Word (OCR)...
               </Text>
 
               {/* Zone de sélection du fichier */}
               <TouchableOpacity style={styles.filePickerBtn} onPress={pickFichierConv}>
-                <Ionicons name="repeat-outline" size={22} color={COLORS.textMuted} />
+                <Ionicons name="repeat-outline" size={22} color={C.textMuted} />
                 <Text style={styles.filePickerText}>
                   {fichierConv ? `✓ ${fichierConv.name}` : "Sélectionner un fichier à convertir"}
                 </Text>
@@ -1424,7 +1426,7 @@ export const GenerateursScreen = () => {
               {resultatConv && (
                 <View style={styles.resultCard}>
                   <View style={styles.resultHeader}>
-                    <Ionicons name="checkmark-circle" size={18} color={COLORS.success} />
+                    <Ionicons name="checkmark-circle" size={18} color={C.success} />
                     <Text style={styles.resultTitle}>
                       {resultatConv.format_source.replace(".", "").toUpperCase()} → {resultatConv.format_cible.replace(".", "").toUpperCase()} converti !
                     </Text>
@@ -1440,7 +1442,7 @@ export const GenerateursScreen = () => {
                     style={styles.newDocBtn}
                     onPress={() => { setFichierConv(null); setResultatConv(null); }}
                   >
-                    <Ionicons name="add-circle-outline" size={16} color={COLORS.primary} />
+                    <Ionicons name="add-circle-outline" size={16} color={C.primary} />
                     <Text style={styles.newDocBtnText}>Convertir un autre fichier</Text>
                   </TouchableOpacity>
                 </View>
@@ -1452,13 +1454,13 @@ export const GenerateursScreen = () => {
           {result && tab !== "conversion" && (
             <View style={styles.resultCard}>
               <View style={styles.resultHeader}>
-                <Ionicons name="checkmark-circle" size={18} color={COLORS.success} />
+                <Ionicons name="checkmark-circle" size={18} color={C.success} />
                 <Text style={styles.resultTitle}>Résultat</Text>
                 <TouchableOpacity
                   style={styles.resetBtn}
                   onPress={() => { setResult(null); setFichiersSrc([]); setInstructionFichiers(""); }}
                 >
-                  <Ionicons name="refresh-outline" size={15} color={COLORS.textMuted} />
+                  <Ionicons name="refresh-outline" size={15} color={C.textMuted} />
                   <Text style={styles.resetBtnText}>Nouveau</Text>
                 </TouchableOpacity>
               </View>
@@ -1478,7 +1480,7 @@ export const GenerateursScreen = () => {
                 style={styles.newDocBtn}
                 onPress={() => { setResult(null); setFichiersSrc([]); setInstructionFichiers(""); }}
               >
-                <Ionicons name="add-circle-outline" size={16} color={COLORS.primary} />
+                <Ionicons name="add-circle-outline" size={16} color={C.primary} />
                 <Text style={styles.newDocBtnText}>Générer un autre document</Text>
               </TouchableOpacity>
             </View>
@@ -1489,8 +1491,8 @@ export const GenerateursScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: COLORS.bg },
+const makeStyles = (C: Colors) => StyleSheet.create({
+  container:    { flex: 1, backgroundColor: C.bg },
   // Page header
   pageHeader:     { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)" },
   pageTitle:      { color: "#FFFFFF", fontSize: 22, fontWeight: "700" },
@@ -1498,164 +1500,164 @@ const styles = StyleSheet.create({
   proBadge:       { backgroundColor: "rgba(123,63,228,0.25)", borderWidth: 1, borderColor: "rgba(123,63,228,0.5)", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 },
   proBadgeText:   { color: "#A78BFA", fontSize: 11, fontWeight: "700", letterSpacing: 0.5 },
   // Tab bar
-  tabBar:       { backgroundColor: COLORS.bgCard, borderBottomWidth: 1, borderBottomColor: COLORS.bgCardBorder, flexGrow: 0 },
+  tabBar:       { backgroundColor: C.bgCard, borderBottomWidth: 1, borderBottomColor: C.bgCardBorder, flexGrow: 0 },
   tabBarContent:{ flexDirection: "row" },
   tab: {
     flexDirection: "row", alignItems: "center", gap: 6,
     paddingHorizontal: 16, paddingVertical: 14,
     borderBottomWidth: 2, borderBottomColor: "transparent",
   },
-  tabActive:        { borderBottomColor: COLORS.primary },
-  tabLabel:         { color: COLORS.textMuted, fontSize: 13, fontWeight: "600" },
-  tabLabelActive:   { color: COLORS.primary },
+  tabActive:        { borderBottomColor: C.primary },
+  tabLabel:         { color: C.textMuted, fontSize: 13, fontWeight: "600" },
+  tabLabelActive:   { color: C.primary },
   // Form
   content:      { padding: 20, paddingBottom: 48 },
   form:         { gap: 4 },
-  label:        { color: COLORS.textSecondary, fontSize: 13, fontWeight: "600", marginTop: 14, marginBottom: 8 },
+  label:        { color: C.textSecondary, fontSize: 13, fontWeight: "600", marginTop: 14, marginBottom: 8 },
   input: {
-    backgroundColor: "#0F172A", borderWidth: 1, borderColor: COLORS.bgCardBorder,
+    backgroundColor: C.bgInput, borderWidth: 1, borderColor: C.bgCardBorder,
     borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12,
-    color: COLORS.textPrimary, fontSize: 15,
+    color: C.textPrimary, fontSize: 15,
   },
   textarea:         { minHeight: 120, textAlignVertical: "top" },
   chipRow:          { marginBottom: 4 },
   chipRowInner:     { flexDirection: "row", gap: 8, paddingVertical: 4 },
   chip: {
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.bgCardBorder,
+    backgroundColor: C.bgCard, borderWidth: 1, borderColor: C.bgCardBorder,
   },
-  chipActive:       { backgroundColor: `${COLORS.primary}30`, borderColor: COLORS.primary },
-  chipText:         { color: COLORS.textMuted, fontSize: 12 },
-  chipTextActive:   { color: COLORS.primary, fontWeight: "600" },
+  chipActive:       { backgroundColor: `${C.primary}30`, borderColor: C.primary },
+  chipText:         { color: C.textMuted, fontSize: 12 },
+  chipTextActive:   { color: C.primary, fontWeight: "600" },
   formatRow:        { flexDirection: "row", gap: 10 },
   formatBtn: {
     flex: 1, paddingVertical: 12, borderRadius: 12,
-    backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.bgCardBorder, alignItems: "center",
+    backgroundColor: C.bgCard, borderWidth: 1, borderColor: C.bgCardBorder, alignItems: "center",
   },
-  formatBtnActive:      { backgroundColor: `${COLORS.primary}30`, borderColor: COLORS.primary },
-  formatBtnText:        { color: COLORS.textMuted, fontSize: 14, fontWeight: "600" },
-  formatBtnTextActive:  { color: COLORS.primary },
+  formatBtnActive:      { backgroundColor: `${C.primary}30`, borderColor: C.primary },
+  formatBtnText:        { color: C.textMuted, fontSize: 14, fontWeight: "600" },
+  formatBtnTextActive:  { color: C.primary },
   nbRow:                { flexDirection: "row", gap: 8, marginBottom: 4 },
   nbChip: {
     width: 48, height: 40, borderRadius: 10,
-    backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.bgCardBorder,
+    backgroundColor: C.bgCard, borderWidth: 1, borderColor: C.bgCardBorder,
     alignItems: "center", justifyContent: "center",
   },
-  nbChipActive:     { backgroundColor: `${COLORS.primary}30`, borderColor: COLORS.primary },
-  nbChipText:       { color: COLORS.textMuted, fontWeight: "600" },
-  nbChipTextActive: { color: COLORS.primary },
+  nbChipActive:     { backgroundColor: `${C.primary}30`, borderColor: C.primary },
+  nbChipText:       { color: C.textMuted, fontWeight: "600" },
+  nbChipTextActive: { color: C.primary },
   // Traduction mode
   modeRow:          { flexDirection: "row", gap: 8, marginTop: 14, marginBottom: 4 },
   modeBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
     paddingVertical: 10, borderRadius: 12,
-    backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.bgCardBorder,
+    backgroundColor: C.bgCard, borderWidth: 1, borderColor: C.bgCardBorder,
   },
-  modeBtnActive:    { backgroundColor: `${COLORS.primary}20`, borderColor: COLORS.primary },
-  modeBtnText:      { color: COLORS.textMuted, fontSize: 13, fontWeight: "600" },
-  modeBtnTextActive:{ color: COLORS.primary },
+  modeBtnActive:    { backgroundColor: `${C.primary}20`, borderColor: C.primary },
+  modeBtnText:      { color: C.textMuted, fontSize: 13, fontWeight: "600" },
+  modeBtnTextActive:{ color: C.primary },
   langueRow:        { flexDirection: "row", alignItems: "flex-start", gap: 12 },
   langueField:      { flex: 1, gap: 6 },
   langueChip: {
     paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10,
-    backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.bgCardBorder,
+    backgroundColor: C.bgCard, borderWidth: 1, borderColor: C.bgCardBorder,
     alignItems: "center", marginBottom: 6,
   },
-  langueChipActive:     { backgroundColor: `${COLORS.primary}30`, borderColor: COLORS.primary },
-  langueChipText:       { color: COLORS.textMuted, fontSize: 12 },
-  langueChipTextActive: { color: COLORS.primary, fontWeight: "600" },
+  langueChipActive:     { backgroundColor: `${C.primary}30`, borderColor: C.primary },
+  langueChipText:       { color: C.textMuted, fontSize: 12 },
+  langueChipTextActive: { color: C.primary, fontWeight: "600" },
   swapBtn:              { marginTop: 42, padding: 8 },
   // File picker
   filePickerBtn: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    backgroundColor: "#0F172A", borderWidth: 1, borderColor: COLORS.bgCardBorder,
+    backgroundColor: C.bgInput, borderWidth: 1, borderColor: C.bgCardBorder,
     borderRadius: 14, paddingHorizontal: 16, paddingVertical: 16,
     borderStyle: "dashed",
   },
-  filePickerBtnActive:    { borderColor: COLORS.primary, borderStyle: "solid" },
-  filePickerText:         { flex: 1, color: COLORS.textMuted, fontSize: 14 },
-  filePickerTextActive:   { color: COLORS.primary, fontWeight: "600" },
-  fileNote:               { color: COLORS.textMuted, fontSize: 11, marginTop: 4 },
+  filePickerBtnActive:    { borderColor: C.primary, borderStyle: "solid" },
+  filePickerText:         { flex: 1, color: C.textMuted, fontSize: 14 },
+  filePickerTextActive:   { color: C.primary, fontWeight: "600" },
+  fileNote:               { color: C.textMuted, fontSize: 11, marginTop: 4 },
   // Buttons
   submitBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: COLORS.primary, borderRadius: 14, paddingVertical: 16, marginTop: 16,
-    shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 },
+    backgroundColor: C.primary, borderRadius: 14, paddingVertical: 16, marginTop: 16,
+    shadowColor: C.primary, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
   },
   submitBtnDisabled:  { opacity: 0.4 },
   submitBtnText:      { color: "#fff", fontWeight: "700", fontSize: 15 },
   // Result
   resultCard: {
-    marginTop: 20, backgroundColor: COLORS.bgCard, borderRadius: 16,
-    padding: 16, borderWidth: 1, borderColor: COLORS.bgCardBorder,
+    marginTop: 20, backgroundColor: C.bgCard, borderRadius: 16,
+    padding: 16, borderWidth: 1, borderColor: C.bgCardBorder,
   },
   resultHeader:     { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
-  resultTitle:      { color: COLORS.success, fontSize: 14, fontWeight: "700", flex: 1 },
-  resetBtn:         { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: `${COLORS.textMuted}15` },
-  resetBtnText:     { color: COLORS.textMuted, fontSize: 11, fontWeight: "600" },
-  resultText:       { color: COLORS.textSecondary, fontSize: 13, lineHeight: 20, marginTop: 8 },
+  resultTitle:      { color: C.success, fontSize: 14, fontWeight: "700", flex: 1 },
+  resetBtn:         { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: `${C.textMuted}15` },
+  resetBtnText:     { color: C.textMuted, fontSize: 11, fontWeight: "600" },
+  resultText:       { color: C.textSecondary, fontSize: 13, lineHeight: 20, marginTop: 8 },
   newDocBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
     marginTop: 14, paddingVertical: 12, borderRadius: 12,
-    borderWidth: 1, borderColor: COLORS.primary, backgroundColor: `${COLORS.primary}10`,
+    borderWidth: 1, borderColor: C.primary, backgroundColor: `${C.primary}10`,
   },
-  newDocBtnText:    { color: COLORS.primary, fontSize: 13, fontWeight: "600" },
+  newDocBtnText:    { color: C.primary, fontSize: 13, fontWeight: "600" },
   downloadBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: COLORS.accent, borderRadius: 12, paddingVertical: 12, marginTop: 12,
+    backgroundColor: C.accent, borderRadius: 12, paddingVertical: 12, marginTop: 12,
   },
   downloadBtnText:  { color: "#fff", fontWeight: "600", fontSize: 14 },
   // Modèles
   modelesContent:   { padding: 16, paddingBottom: 48 },
   modeleCat:        { marginBottom: 24 },
   modeleCatTitle: {
-    color: COLORS.textPrimary, fontSize: 14, fontWeight: "700",
+    color: C.textPrimary, fontSize: 14, fontWeight: "700",
     marginBottom: 10, letterSpacing: 0.3,
   },
   modeleCard: {
-    backgroundColor: COLORS.bgCard, borderRadius: 14, padding: 14,
-    marginBottom: 10, borderWidth: 1, borderColor: COLORS.bgCardBorder,
+    backgroundColor: C.bgCard, borderRadius: 14, padding: 14,
+    marginBottom: 10, borderWidth: 1, borderColor: C.bgCardBorder,
   },
   modeleCardHeader: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginBottom: 6 },
-  modeleCardTitle: { flex: 1, color: COLORS.textPrimary, fontSize: 13, fontWeight: "700" },
+  modeleCardTitle: { flex: 1, color: C.textPrimary, fontSize: 13, fontWeight: "700" },
   modeleTag:        { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
   modeleTagBlue:    { backgroundColor: "rgba(59,130,246,0.15)" },
   modeleTagPurple:  { backgroundColor: "rgba(168,85,247,0.15)" },
   modeleTagText:    { fontSize: 10, fontWeight: "700" },
   modeleTagTextBlue:   { color: "#93C5FD" },
   modeleTagTextPurple: { color: "#D8B4FE" },
-  modeleCardDesc: { color: COLORS.textMuted, fontSize: 12, lineHeight: 18, marginBottom: 8 },
+  modeleCardDesc: { color: C.textMuted, fontSize: 12, lineHeight: 18, marginBottom: 8 },
   modeleCardFooter: { flexDirection: "row", alignItems: "center", gap: 4 },
-  modeleCardUse:    { color: COLORS.primary, fontSize: 12, fontWeight: "600" },
+  modeleCardUse:    { color: C.primary, fontSize: 12, fontWeight: "600" },
   // Fichiers sources
   fichierItem: {
     flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: `${COLORS.primary}15`, borderRadius: 10,
+    backgroundColor: `${C.primary}15`, borderRadius: 10,
     paddingHorizontal: 12, paddingVertical: 8, marginBottom: 6,
   },
-  fichierNom: { flex: 1, color: COLORS.textPrimary, fontSize: 13 },
+  fichierNom: { flex: 1, color: C.textPrimary, fontSize: 13 },
   // Historique
   histList:         { padding: 16, gap: 0, paddingBottom: 40 },
   histItem: {
     flexDirection: "row", alignItems: "center", gap: 12,
-    backgroundColor: COLORS.bgCard, borderRadius: 14,
+    backgroundColor: C.bgCard, borderRadius: 14,
     padding: 14, marginBottom: 10,
-    borderWidth: 1, borderColor: COLORS.bgCardBorder,
+    borderWidth: 1, borderColor: C.bgCardBorder,
   },
   histItemIcon: {
     width: 38, height: 38, borderRadius: 10,
-    backgroundColor: `${COLORS.primary}20`,
+    backgroundColor: `${C.primary}20`,
     alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
-  histItemTitre:    { color: COLORS.textPrimary, fontSize: 13, fontWeight: "600", marginBottom: 2 },
-  histItemMeta:     { color: COLORS.textMuted, fontSize: 11 },
+  histItemTitre:    { color: C.textPrimary, fontSize: 13, fontWeight: "600", marginBottom: 2 },
+  histItemMeta:     { color: C.textMuted, fontSize: 11 },
   histActions:      { flexDirection: "row", gap: 6 },
   histBtn:          { padding: 6 },
   histEmpty: {
     flex: 1, alignItems: "center", justifyContent: "center",
     paddingTop: 80, paddingHorizontal: 32,
   },
-  histEmptyText:    { color: COLORS.textMuted, fontSize: 16, fontWeight: "600", marginTop: 16 },
-  histEmptySubtext: { color: COLORS.textMuted, fontSize: 13, textAlign: "center", marginTop: 6 },
+  histEmptyText:    { color: C.textMuted, fontSize: 16, fontWeight: "600", marginTop: 16 },
+  histEmptySubtext: { color: C.textMuted, fontSize: 13, textAlign: "center", marginTop: 6 },
 });

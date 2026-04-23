@@ -2,14 +2,14 @@
  * Bureau Traduction — texte + fichier (DOCX/PDF/PPTX) FR<->EN<->ES<->...
  * Utilise traductionApi (POST /bureau/traduction/texte et /bureau/traduction/fichier).
  */
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet,
   Alert, ActivityIndicator, Linking,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS } from "@/store";
+import { useColors, type Colors } from "@/store";
 import { traductionApi } from "@/api/client";
 
 const LANGUES: Array<{ code: string; label: string; flag: string }> = [
@@ -21,6 +21,8 @@ const LANGUES: Array<{ code: string; label: string; flag: string }> = [
 ];
 
 export const TraductionScreen = () => {
+  const C = useColors();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const [source, setSource] = useState("fr");
   const [cible, setCible]   = useState("en");
   const [contenu, setContenu] = useState("");
@@ -103,7 +105,7 @@ export const TraductionScreen = () => {
         style={styles.textarea}
         multiline
         placeholder="Collez le texte ici…"
-        placeholderTextColor="#6B7280"
+        placeholderTextColor={C.textMuted}
       />
       <TouchableOpacity style={styles.btn} onPress={traduireTexte} disabled={busy}>
         {busy ? <ActivityIndicator color="#fff" /> :
@@ -120,13 +122,13 @@ export const TraductionScreen = () => {
       <View style={styles.divider} />
 
       <Text style={styles.lbl}>Ou traduire un fichier (DOCX/PDF/PPTX)</Text>
-      <TouchableOpacity style={[styles.btn, { backgroundColor: COLORS.primary }]} onPress={traduireFichier} disabled={busy}>
+      <TouchableOpacity style={[styles.btn, { backgroundColor: C.primary }]} onPress={traduireFichier} disabled={busy}>
         {busy ? <ActivityIndicator color="#fff" /> :
           <><Ionicons name="document-attach" size={18} color="#fff" /><Text style={styles.btnTxt}>  Choisir un fichier…</Text></>}
       </TouchableOpacity>
 
       {fichierUrl && (
-        <TouchableOpacity style={[styles.btn, { backgroundColor: "#16a34a" }]} onPress={() => Linking.openURL(fichierUrl)}>
+        <TouchableOpacity style={[styles.btn, { backgroundColor: C.success }]} onPress={() => Linking.openURL(fichierUrl)}>
           <Ionicons name="cloud-download" size={18} color="#fff" />
           <Text style={styles.btnTxt}>  Télécharger le fichier traduit</Text>
         </TouchableOpacity>
@@ -135,21 +137,21 @@ export const TraductionScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container:  { flex: 1, backgroundColor: "#0B0F1A" },
-  h1:         { color: "#fff", fontSize: 22, fontWeight: "700" },
-  muted:      { color: "#9CA3AF", fontSize: 12, marginTop: 2, marginBottom: 16 },
-  lbl:        { color: "#E5E7EB", fontSize: 13, fontWeight: "600", marginTop: 16, marginBottom: 6 },
+const makeStyles = (C: Colors) => StyleSheet.create({
+  container:  { flex: 1, backgroundColor: C.bg },
+  h1:         { color: C.textPrimary, fontSize: 22, fontWeight: "700" },
+  muted:      { color: C.textMuted, fontSize: 12, marginTop: 2, marginBottom: 16 },
+  lbl:        { color: C.textSecondary, fontSize: 13, fontWeight: "600", marginTop: 16, marginBottom: 6 },
   langRow:    { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  langBtn:    { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: "#1F2937" },
-  langBtnActive: { backgroundColor: COLORS.primary },
+  langBtn:    { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: C.bgCard, borderWidth: 1, borderColor: C.bgCardBorder },
+  langBtnActive: { backgroundColor: C.primary, borderColor: C.primary },
   langFlag:   { fontSize: 14, marginRight: 4 },
-  langLabel:  { color: "#D1D5DB", fontSize: 12, fontWeight: "600" },
-  textarea:   { backgroundColor: "#111827", color: "#fff", minHeight: 120, padding: 10, borderRadius: 8, textAlignVertical: "top" },
-  btn:        { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: COLORS.primary, paddingVertical: 12, borderRadius: 8, marginTop: 12 },
+  langLabel:  { color: C.textSecondary, fontSize: 12, fontWeight: "600" },
+  textarea:   { backgroundColor: C.bgInput, color: C.textPrimary, minHeight: 120, padding: 10, borderRadius: 8, textAlignVertical: "top", borderWidth: 1, borderColor: C.bgCardBorder },
+  btn:        { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: C.primary, paddingVertical: 12, borderRadius: 8, marginTop: 12 },
   btnTxt:     { color: "#fff", fontWeight: "700" },
-  outBox:     { backgroundColor: "#111827", padding: 12, borderRadius: 8, marginTop: 16 },
-  outTitle:   { color: COLORS.primary, fontWeight: "700", marginBottom: 6 },
-  outTxt:     { color: "#E5E7EB", lineHeight: 20 },
-  divider:    { height: 1, backgroundColor: "#1F2937", marginVertical: 24 },
+  outBox:     { backgroundColor: C.bgCard, padding: 12, borderRadius: 8, marginTop: 16, borderWidth: 1, borderColor: C.bgCardBorder },
+  outTitle:   { color: C.primary, fontWeight: "700", marginBottom: 6 },
+  outTxt:     { color: C.textSecondary, lineHeight: 20 },
+  divider:    { height: 1, backgroundColor: C.bgCardBorder, marginVertical: 24 },
 });

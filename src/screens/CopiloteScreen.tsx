@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,10 +12,12 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, useCopiloteStore, MobileMessage } from "@/store";
+import { useColors, type Colors, useCopiloteStore, MobileMessage } from "@/store";
 import { copiloteApi } from "@/api/client";
 
 const TypingDots = () => {
+  const C = useColors();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const [dot, setDot] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setDot((d) => (d + 1) % 4), 400);
@@ -25,6 +27,8 @@ const TypingDots = () => {
 };
 
 const MessageBubble = ({ msg }: { msg: MobileMessage }) => {
+  const C = useColors();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const isUser = msg.role === "user";
   return (
     <View style={[styles.bubbleRow, isUser ? styles.bubbleRowUser : styles.bubbleRowAssistant]}>
@@ -43,7 +47,7 @@ const MessageBubble = ({ msg }: { msg: MobileMessage }) => {
             </Text>
             {msg.agent_utilise && (
               <View style={styles.agentBadge}>
-                <Ionicons name="hardware-chip-outline" size={11} color={COLORS.accent} />
+                <Ionicons name="hardware-chip-outline" size={11} color={C.accent} />
                 <Text style={styles.agentBadgeText}>{msg.agent_utilise}</Text>
               </View>
             )}
@@ -64,6 +68,8 @@ const SUGGESTIONS = [
 ];
 
 export const CopiloteScreen = ({ route }: any) => {
+  const C = useColors();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { messages, isLoading, addMessage, updateLastMessage, setLoading, clearSession, setSessionId } =
     useCopiloteStore();
   const [input, setInput] = useState("");
@@ -146,7 +152,7 @@ export const CopiloteScreen = ({ route }: any) => {
           </View>
         </View>
         <TouchableOpacity style={styles.newBtn} onPress={handleNewSession}>
-          <Ionicons name="add-circle-outline" size={20} color={COLORS.textMuted} />
+          <Ionicons name="add-circle-outline" size={20} color={C.textMuted} />
         </TouchableOpacity>
       </View>
 
@@ -189,7 +195,7 @@ export const CopiloteScreen = ({ route }: any) => {
         <TextInput
           style={styles.textInput}
           placeholder="Posez votre question..."
-          placeholderTextColor={COLORS.textMuted}
+          placeholderTextColor={C.textMuted}
           value={input}
           onChangeText={setInput}
           multiline
@@ -212,8 +218,8 @@ export const CopiloteScreen = ({ route }: any) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
+const makeStyles = (C: Colors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -221,46 +227,46 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingTop: 12,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.bgCardBorder,
-    backgroundColor: COLORS.bgCard,
+    borderBottomColor: C.bgCardBorder,
+    backgroundColor: C.bgCard,
   },
   headerLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
   headerAvatar: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: COLORS.primary,
+    backgroundColor: C.primary,
     alignItems: "center",
     justifyContent: "center",
   },
   headerAvatarText: { color: "#fff", fontSize: 20, fontWeight: "900" },
-  headerTitle: { color: COLORS.textPrimary, fontSize: 16, fontWeight: "700" },
-  headerSub: { color: COLORS.textMuted, fontSize: 11 },
+  headerTitle: { color: C.textPrimary, fontSize: 16, fontWeight: "700" },
+  headerSub: { color: C.textMuted, fontSize: 11 },
   newBtn: { padding: 8 },
   emptyState: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   emptyIcon: {
     width: 64,
     height: 64,
     borderRadius: 18,
-    backgroundColor: `${COLORS.primary}30`,
+    backgroundColor: `${C.primary}30`,
     borderWidth: 1,
-    borderColor: COLORS.primary,
+    borderColor: C.primary,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16,
   },
-  emptyIconText: { color: COLORS.primary, fontSize: 32, fontWeight: "900" },
-  emptyTitle: { color: COLORS.textPrimary, fontSize: 18, fontWeight: "700", textAlign: "center", marginBottom: 8 },
-  emptySub: { color: COLORS.textMuted, fontSize: 13, textAlign: "center", lineHeight: 20, marginBottom: 24 },
+  emptyIconText: { color: C.primary, fontSize: 32, fontWeight: "900" },
+  emptyTitle: { color: C.textPrimary, fontSize: 18, fontWeight: "700", textAlign: "center", marginBottom: 8 },
+  emptySub: { color: C.textMuted, fontSize: 13, textAlign: "center", lineHeight: 20, marginBottom: 24 },
   suggestionsGrid: { width: "100%", gap: 8 },
   suggestionChip: {
-    backgroundColor: COLORS.bgCard,
+    backgroundColor: C.bgCard,
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: COLORS.bgCardBorder,
+    borderColor: C.bgCardBorder,
   },
-  suggestionText: { color: COLORS.textSecondary, fontSize: 13 },
+  suggestionText: { color: C.textSecondary, fontSize: 13 },
   messageList: { padding: 16, gap: 12, paddingBottom: 8 },
   bubbleRow: { flexDirection: "row", gap: 10, maxWidth: "85%" },
   bubbleRowUser: { alignSelf: "flex-end", justifyContent: "flex-end" },
@@ -269,12 +275,12 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 10,
-    backgroundColor: `${COLORS.primary}30`,
+    backgroundColor: `${C.primary}30`,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
   },
-  avatarText: { color: COLORS.primary, fontSize: 14, fontWeight: "900" },
+  avatarText: { color: C.primary, fontSize: 14, fontWeight: "900" },
   bubble: {
     borderRadius: 16,
     padding: 14,
@@ -286,18 +292,18 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   bubbleUser: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: C.primary,
     borderBottomRightRadius: 4,
   },
   bubbleAssistant: {
-    backgroundColor: COLORS.bgCard,
+    backgroundColor: C.bgCard,
     borderWidth: 1,
-    borderColor: COLORS.bgCardBorder,
+    borderColor: C.bgCardBorder,
     borderBottomLeftRadius: 4,
   },
-  bubbleText: { color: COLORS.textSecondary, fontSize: 14, lineHeight: 22 },
+  bubbleText: { color: C.textSecondary, fontSize: 14, lineHeight: 22 },
   bubbleTextUser: { color: "#fff" },
-  typingDots: { color: COLORS.textMuted, fontSize: 20, letterSpacing: 2 },
+  typingDots: { color: C.textMuted, fontSize: 20, letterSpacing: 2 },
   agentBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -305,27 +311,27 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: COLORS.bgCardBorder,
+    borderTopColor: C.bgCardBorder,
   },
-  agentBadgeText: { color: COLORS.accent, fontSize: 11, fontWeight: "600" },
+  agentBadgeText: { color: C.accent, fontSize: 11, fontWeight: "600" },
   inputBar: {
     flexDirection: "row",
     alignItems: "flex-end",
     padding: 12,
     borderTopWidth: 1,
-    borderTopColor: COLORS.bgCardBorder,
-    backgroundColor: COLORS.bgCard,
+    borderTopColor: C.bgCardBorder,
+    backgroundColor: C.bgCard,
     gap: 10,
   },
   textInput: {
     flex: 1,
-    backgroundColor: "#0F172A",
+    backgroundColor: C.bgInput,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: COLORS.bgCardBorder,
+    borderColor: C.bgCardBorder,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    color: COLORS.textPrimary,
+    color: C.textPrimary,
     fontSize: 15,
     maxHeight: 120,
   },
@@ -333,7 +339,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: COLORS.primary,
+    backgroundColor: C.primary,
     alignItems: "center",
     justifyContent: "center",
   },

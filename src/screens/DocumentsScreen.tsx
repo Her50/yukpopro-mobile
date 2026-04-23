@@ -1,13 +1,13 @@
 /**
  * Mes Documents — listing + téléchargement (Bureau partagé).
  */
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   RefreshControl, Linking, ActivityIndicator, Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS } from "@/store";
+import { useColors, type Colors } from "@/store";
 import { documentsApi } from "@/api/client";
 
 type DocItem = {
@@ -27,6 +27,8 @@ const _type = (d: DocItem) => d.type || d.type_document || "—";
 const _date = (d: DocItem) => d.date || d.date_creation || d.created_at || "";
 
 export const DocumentsScreen = () => {
+  const C = useColors();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const [docs, setDocs]       = useState<DocItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
@@ -71,24 +73,24 @@ export const DocumentsScreen = () => {
 
   const renderItem = ({ item }: { item: DocItem }) => (
     <View style={styles.item}>
-      <Ionicons name="document-text" size={28} color={COLORS.primary} />
+      <Ionicons name="document-text" size={28} color={C.primary} />
       <View style={styles.itemBody}>
         <Text style={styles.itemTitle} numberOfLines={1}>{_nom(item)}</Text>
         <Text style={styles.itemMeta}>{_type(item)} · {_date(item).slice(0, 10)}</Text>
       </View>
       <TouchableOpacity onPress={() => telecharger(item)} style={styles.iconBtn}>
-        <Ionicons name="cloud-download-outline" size={22} color="#fff" />
+        <Ionicons name="cloud-download-outline" size={22} color={C.primary} />
       </TouchableOpacity>
       {item.id && (
         <TouchableOpacity onPress={() => supprimer(item)} style={styles.iconBtn}>
-          <Ionicons name="trash-outline" size={22} color="#EF4444" />
+          <Ionicons name="trash-outline" size={22} color={C.error} />
         </TouchableOpacity>
       )}
     </View>
   );
 
   if (loading && docs.length === 0) {
-    return <View style={styles.center}><ActivityIndicator color={COLORS.primary} /></View>;
+    return <View style={styles.center}><ActivityIndicator color={C.primary} /></View>;
   }
 
   return (
@@ -102,7 +104,7 @@ export const DocumentsScreen = () => {
         data={docs}
         keyExtractor={(d, i) => String(d.id ?? _nom(d) ?? i)}
         renderItem={renderItem}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={charger} tintColor="#fff" />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={charger} tintColor={C.primary} />}
         ListEmptyComponent={
           <Text style={styles.empty}>Aucun document. Générez un rapport ou un livrable pour commencer.</Text>
         }
@@ -112,17 +114,17 @@ export const DocumentsScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container:  { flex: 1, backgroundColor: "#0B0F1A" },
-  center:     { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#0B0F1A" },
+const makeStyles = (C: Colors) => StyleSheet.create({
+  container:  { flex: 1, backgroundColor: C.bg },
+  center:     { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: C.bg },
   header:     { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
-  h1:         { color: "#fff", fontSize: 22, fontWeight: "700" },
-  muted:      { color: "#9CA3AF", fontSize: 12, marginTop: 2 },
-  err:        { color: "#F87171", paddingHorizontal: 16, marginVertical: 8 },
-  empty:      { color: "#6B7280", textAlign: "center", marginTop: 48, paddingHorizontal: 24 },
-  item:       { flexDirection: "row", alignItems: "center", padding: 12, borderRadius: 10, backgroundColor: "#111827", marginVertical: 6 },
+  h1:         { color: C.textPrimary, fontSize: 22, fontWeight: "700" },
+  muted:      { color: C.textMuted, fontSize: 12, marginTop: 2 },
+  err:        { color: C.error, paddingHorizontal: 16, marginVertical: 8 },
+  empty:      { color: C.textMuted, textAlign: "center", marginTop: 48, paddingHorizontal: 24 },
+  item:       { flexDirection: "row", alignItems: "center", padding: 12, borderRadius: 10, backgroundColor: C.bgCard, marginVertical: 6, borderWidth: 1, borderColor: C.bgCardBorder },
   itemBody:   { flex: 1, marginLeft: 12 },
-  itemTitle:  { color: "#fff", fontWeight: "600", fontSize: 14 },
-  itemMeta:   { color: "#9CA3AF", fontSize: 12, marginTop: 2 },
+  itemTitle:  { color: C.textPrimary, fontWeight: "600", fontSize: 14 },
+  itemMeta:   { color: C.textMuted, fontSize: 12, marginTop: 2 },
   iconBtn:    { padding: 6, marginLeft: 4 },
 });

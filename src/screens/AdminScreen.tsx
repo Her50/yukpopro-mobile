@@ -2,10 +2,10 @@
  * Admin — vue mobile pour rôle admin (synthèse plateforme).
  * Charge /pro/admin/synthese si dispo, sinon affiche placeholders.
  */
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS } from "@/store";
+import { useColors, type Colors } from "@/store";
 import http from "@/api/client";
 
 type Synthese = {
@@ -19,6 +19,8 @@ type Synthese = {
 };
 
 export const AdminScreen = () => {
+  const C = useColors();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const [data, setData]   = useState<Synthese | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +43,7 @@ export const AdminScreen = () => {
 
   const KPI = ({ icon, label, value }: { icon: any; label: string; value: string | number }) => (
     <View style={styles.kpi}>
-      <Ionicons name={icon} size={22} color={COLORS.primary} />
+      <Ionicons name={icon} size={22} color={C.primary} />
       <View style={{ flex: 1, marginLeft: 12 }}>
         <Text style={styles.kpiVal}>{value}</Text>
         <Text style={styles.kpiLabel}>{label}</Text>
@@ -50,7 +52,7 @@ export const AdminScreen = () => {
   );
 
   if (loading) {
-    return <View style={styles.center}><ActivityIndicator color={COLORS.primary} /></View>;
+    return <View style={styles.center}><ActivityIndicator color={C.primary} /></View>;
   }
 
   return (
@@ -71,13 +73,13 @@ export const AdminScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container:  { flex: 1, backgroundColor: "#0B0F1A" },
-  center:     { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#0B0F1A" },
-  h1:         { color: "#fff", fontSize: 22, fontWeight: "700" },
-  muted:      { color: "#9CA3AF", fontSize: 12, marginTop: 2, marginBottom: 16 },
-  err:        { color: "#F87171", marginBottom: 12 },
-  kpi:        { flexDirection: "row", alignItems: "center", padding: 14, borderRadius: 10, backgroundColor: "#111827", marginVertical: 6 },
-  kpiVal:     { color: "#fff", fontSize: 18, fontWeight: "700" },
-  kpiLabel:   { color: "#9CA3AF", fontSize: 12, marginTop: 2 },
+const makeStyles = (C: Colors) => StyleSheet.create({
+  container:  { flex: 1, backgroundColor: C.bg },
+  center:     { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: C.bg },
+  h1:         { color: C.textPrimary, fontSize: 22, fontWeight: "700" },
+  muted:      { color: C.textMuted, fontSize: 12, marginTop: 2, marginBottom: 16 },
+  err:        { color: C.error, marginBottom: 12 },
+  kpi:        { flexDirection: "row", alignItems: "center", padding: 14, borderRadius: 10, backgroundColor: C.bgCard, marginVertical: 6, borderWidth: 1, borderColor: C.bgCardBorder },
+  kpiVal:     { color: C.textPrimary, fontSize: 18, fontWeight: "700" },
+  kpiLabel:   { color: C.textMuted, fontSize: 12, marginTop: 2 },
 });

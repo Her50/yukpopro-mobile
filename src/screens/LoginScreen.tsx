@@ -15,11 +15,13 @@ import {
   FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, useAuthStore } from "@/store";
+import { useColors, type Colors, useAuthStore } from "@/store";
 import { authApi } from "@/api/client";
 import { COUNTRIES, DEFAULT_COUNTRY, type Country } from "@/data/countries";
 
 export const LoginScreen = ({ navigation }: any) => {
+  const C = useColors();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -139,7 +141,7 @@ export const LoginScreen = ({ navigation }: any) => {
               <TextInput
                 style={styles.input}
                 placeholder="Jean Dupont"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={C.textMuted}
                 value={nom}
                 onChangeText={setNom}
                 autoCapitalize="words"
@@ -152,7 +154,7 @@ export const LoginScreen = ({ navigation }: any) => {
             <TextInput
               style={styles.input}
               placeholder="votre@email.com"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={C.textMuted}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -167,7 +169,7 @@ export const LoginScreen = ({ navigation }: any) => {
               <TextInput
                 style={[styles.input, { flex: 1, marginBottom: 0 }]}
                 placeholder="••••••••"
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={C.textMuted}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -177,7 +179,7 @@ export const LoginScreen = ({ navigation }: any) => {
                 <Ionicons
                   name={showPassword ? "eye-off-outline" : "eye-outline"}
                   size={20}
-                  color={COLORS.textMuted}
+                  color={C.textMuted}
                 />
               </TouchableOpacity>
             </View>
@@ -195,13 +197,13 @@ export const LoginScreen = ({ navigation }: any) => {
                 >
                   <Text style={styles.dialCodeFlag}>{phoneCountry.flag}</Text>
                   <Text style={styles.dialCodeText}>{phoneCountry.dialCode}</Text>
-                  <Ionicons name="chevron-down" size={14} color={COLORS.textMuted} />
+                  <Ionicons name="chevron-down" size={14} color={C.textMuted} />
                 </TouchableOpacity>
                 {/* Numéro */}
                 <TextInput
                   style={[styles.input, styles.phoneInput]}
                   placeholder="600 000 000"
-                  placeholderTextColor={COLORS.textMuted}
+                  placeholderTextColor={C.textMuted}
                   value={phoneNumber}
                   onChangeText={setPhoneNumber}
                   keyboardType="phone-pad"
@@ -236,13 +238,13 @@ export const LoginScreen = ({ navigation }: any) => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Indicatif téléphonique</Text>
               <TouchableOpacity onPress={() => setShowCountryPicker(false)}>
-                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+                <Ionicons name="close" size={24} color={C.textPrimary} />
               </TouchableOpacity>
             </View>
             <TextInput
               style={styles.modalSearch}
               placeholder="Rechercher un pays ou indicatif..."
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={C.textMuted}
               value={countrySearch}
               onChangeText={setCountrySearch}
               autoFocus
@@ -275,88 +277,88 @@ export const LoginScreen = ({ navigation }: any) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
+const makeStyles = (C: Colors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
   scroll: { flexGrow: 1, justifyContent: "center", padding: 24 },
   logoSection: { alignItems: "center", marginBottom: 32 },
   logoCircle: {
     width: 88, height: 88, borderRadius: 22,
     backgroundColor: "#fff", alignItems: "center", justifyContent: "center",
     marginBottom: 12, padding: 8,
-    shadowColor: COLORS.primary,
+    shadowColor: C.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35, shadowRadius: 16, elevation: 10,
   },
   logoImage: { width: 68, height: 68 },
-  brand: { color: COLORS.textPrimary, fontSize: 28, fontWeight: "700" },
-  brandPro: { color: COLORS.gold },
-  tagline: { color: COLORS.textMuted, fontSize: 13, marginTop: 4 },
+  brand: { color: C.textPrimary, fontSize: 28, fontWeight: "700" },
+  brandPro: { color: C.gold },
+  tagline: { color: C.textMuted, fontSize: 13, marginTop: 4 },
   card: {
-    backgroundColor: COLORS.bgCard, borderRadius: 20, padding: 24,
-    borderWidth: 1, borderColor: COLORS.bgCardBorder,
+    backgroundColor: C.bgCard, borderRadius: 20, padding: 24,
+    borderWidth: 1, borderColor: C.bgCardBorder,
   },
   toggle: {
-    flexDirection: "row", backgroundColor: "#0F172A",
+    flexDirection: "row", backgroundColor: C.bgInput,
     borderRadius: 12, padding: 4, marginBottom: 24,
   },
   toggleBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center" },
-  toggleBtnActive: { backgroundColor: COLORS.primary },
-  toggleText: { color: COLORS.textMuted, fontWeight: "600", fontSize: 14 },
+  toggleBtnActive: { backgroundColor: C.primary },
+  toggleText: { color: C.textMuted, fontWeight: "600", fontSize: 14 },
   toggleTextActive: { color: "#fff" },
   field: { marginBottom: 16 },
-  label: { color: COLORS.textSecondary, fontSize: 13, fontWeight: "600", marginBottom: 8 },
+  label: { color: C.textSecondary, fontSize: 13, fontWeight: "600", marginBottom: 8 },
   input: {
-    backgroundColor: "#0F172A", borderWidth: 1, borderColor: COLORS.bgCardBorder,
+    backgroundColor: C.bgInput, borderWidth: 1, borderColor: C.bgCardBorder,
     borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12,
-    color: COLORS.textPrimary, fontSize: 15,
+    color: C.textPrimary, fontSize: 15,
   },
   passwordRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   eyeBtn: {
-    backgroundColor: "#0F172A", borderWidth: 1, borderColor: COLORS.bgCardBorder,
+    backgroundColor: C.bgInput, borderWidth: 1, borderColor: C.bgCardBorder,
     borderRadius: 12, padding: 12,
   },
   // Téléphone
   phoneRow: { flexDirection: "row", gap: 8 },
   dialCodeBtn: {
     flexDirection: "row", alignItems: "center", gap: 4,
-    backgroundColor: "#0F172A", borderWidth: 1, borderColor: COLORS.bgCardBorder,
+    backgroundColor: C.bgInput, borderWidth: 1, borderColor: C.bgCardBorder,
     borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12,
   },
   dialCodeFlag: { fontSize: 18 },
-  dialCodeText: { color: COLORS.textPrimary, fontSize: 14, fontWeight: "600" },
+  dialCodeText: { color: C.textPrimary, fontSize: 14, fontWeight: "600" },
   phoneInput: { flex: 1, marginBottom: 0 },
   submitBtn: {
-    backgroundColor: COLORS.primary, borderRadius: 14,
+    backgroundColor: C.primary, borderRadius: 14,
     paddingVertical: 16, alignItems: "center", marginTop: 8,
-    shadowColor: COLORS.primary,
+    shadowColor: C.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 8, elevation: 6,
   },
   submitBtnDisabled: { opacity: 0.6 },
   submitText: { color: "#fff", fontWeight: "700", fontSize: 16 },
-  footer: { color: COLORS.textMuted, fontSize: 11, textAlign: "center", marginTop: 32 },
+  footer: { color: C.textMuted, fontSize: 11, textAlign: "center", marginTop: 32 },
   // Modal
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "flex-end" },
   modalCard: {
-    backgroundColor: COLORS.bgCard, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    backgroundColor: C.bgCard, borderTopLeftRadius: 24, borderTopRightRadius: 24,
     maxHeight: "80%", paddingBottom: 24,
   },
   modalHeader: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    padding: 20, borderBottomWidth: 1, borderBottomColor: COLORS.bgCardBorder,
+    padding: 20, borderBottomWidth: 1, borderBottomColor: C.bgCardBorder,
   },
-  modalTitle: { color: COLORS.textPrimary, fontSize: 17, fontWeight: "700" },
+  modalTitle: { color: C.textPrimary, fontSize: 17, fontWeight: "700" },
   modalSearch: {
-    backgroundColor: "#0F172A", borderWidth: 1, borderColor: COLORS.bgCardBorder,
+    backgroundColor: C.bgInput, borderWidth: 1, borderColor: C.bgCardBorder,
     borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12,
-    color: COLORS.textPrimary, fontSize: 15, margin: 16,
+    color: C.textPrimary, fontSize: 15, margin: 16,
   },
   countryItem: {
     flexDirection: "row", alignItems: "center", gap: 12,
     paddingHorizontal: 20, paddingVertical: 12,
   },
-  countryItemActive: { backgroundColor: `${COLORS.primary}20` },
+  countryItemActive: { backgroundColor: `${C.primary}20` },
   countryFlag: { fontSize: 22, width: 30 },
-  countryName: { flex: 1, color: COLORS.textPrimary, fontSize: 15 },
-  countryDial: { color: COLORS.textMuted, fontSize: 14, fontWeight: "600" },
+  countryName: { flex: 1, color: C.textPrimary, fontSize: 15 },
+  countryDial: { color: C.textMuted, fontSize: 14, fontWeight: "600" },
 });

@@ -3,14 +3,14 @@
  * Workflow complet : créer étude → audio terrain → transcription → formulaire IA
  * → XLSForm ODK/KoBoCollect → analyse thématique/quantitative/intelligente → rapport
  */
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet,
   Modal, Alert, ActivityIndicator, Share, Platform, Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Markdown from "react-native-markdown-display";
-import { COLORS } from "@/store";
+import { useColors, type Colors } from "@/store";
 import { enquetesApi } from "@/api/client";
 
 let Audio: any = null;
@@ -63,6 +63,10 @@ const fmtDur = (s: number) =>
 // ── Composant principal ───────────────────────────────────────────────────────
 
 export const EnquetesScreen = ({ navigation }: any) => {
+  const C = useColors();
+  const s = useMemo(() => makeS(C), [C]);
+  const mdStyles = useMemo(() => makeMdStyles(C), [C]);
+
   const [etudes,      setEtudes]      = useState<Etude[]>([]);
   const [loading,     setLoading]     = useState(false);
   const [showCreate,  setShowCreate]  = useState(false);
@@ -385,11 +389,11 @@ export const EnquetesScreen = ({ navigation }: any) => {
                   <View style={[s.badge, { backgroundColor: STATUT_COLOR[activeEtude.statut] + "22" }]}>
                     <Text style={[s.badgeTxt, { color: STATUT_COLOR[activeEtude.statut] }]}>{STATUT_LABEL[activeEtude.statut]}</Text>
                   </View>
-                  <Text style={{ color: COLORS.textMuted, fontSize: 11 }}>{activeEtude.mode}</Text>
+                  <Text style={{ color: C.textMuted, fontSize: 11 }}>{activeEtude.mode}</Text>
                 </View>
               </View>
               <TouchableOpacity onPress={() => { setActive(null); }}>
-                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+                <Ionicons name="close" size={24} color={C.textPrimary} />
               </TouchableOpacity>
             </View>
 
@@ -420,7 +424,7 @@ export const EnquetesScreen = ({ navigation }: any) => {
                 <View style={{ gap: 14 }}>
                   <Text style={s.sectionLabel}>Enregistreur terrain</Text>
                   <TextInput style={s.input} value={locuteur} onChangeText={setLocuteur}
-                    placeholder="Nom / identifiant du répondant" placeholderTextColor={COLORS.textMuted} />
+                    placeholder="Nom / identifiant du répondant" placeholderTextColor={C.textMuted} />
 
                   <View style={s.recBox}>
                     {isRec && (
@@ -462,8 +466,8 @@ export const EnquetesScreen = ({ navigation }: any) => {
                       {transcripts.map((t, i) => (
                         <View key={i} style={s.transcriptCard}>
                           <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-                            <Text style={{ color: COLORS.textPrimary, fontWeight: "600", fontSize: 13 }}>{t.locuteur}</Text>
-                            <Text style={{ color: COLORS.textMuted, fontSize: 11 }}>{t.duree_estimee_min} min · {(t.longueur / 1000).toFixed(1)}k car.</Text>
+                            <Text style={{ color: C.textPrimary, fontWeight: "600", fontSize: 13 }}>{t.locuteur}</Text>
+                            <Text style={{ color: C.textMuted, fontSize: 11 }}>{t.duree_estimee_min} min · {(t.longueur / 1000).toFixed(1)}k car.</Text>
                           </View>
                           <Text style={{ color: "#93C5FD", fontSize: 12, fontStyle: "italic" }} numberOfLines={2}>« {t.extrait} »</Text>
                         </View>
@@ -505,7 +509,7 @@ export const EnquetesScreen = ({ navigation }: any) => {
                           <View style={s.divider} />
 
                           <Text style={[s.sectionLabel, { marginBottom: 0 }]}>Ou créer manuellement</Text>
-                          <Text style={{ color: COLORS.textMuted, fontSize: 12 }}>
+                          <Text style={{ color: C.textMuted, fontSize: 12 }}>
                             Utilisez l'API POST /enquetes/{"{etude_id}"}/formulaire pour créer un formulaire personnalisé.
                           </Text>
                         </>
@@ -713,7 +717,7 @@ export const EnquetesScreen = ({ navigation }: any) => {
           <View style={s.modalHeader}>
             <Text style={s.modalTitle}>Générer le formulaire</Text>
             <TouchableOpacity onPress={() => setShowGenIA(false)}>
-              <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+              <Ionicons name="close" size={24} color={C.textPrimary} />
             </TouchableOpacity>
           </View>
           <ScrollView style={s.flex} contentContainerStyle={s.tabContent} keyboardShouldPersistTaps="handled">
@@ -722,15 +726,15 @@ export const EnquetesScreen = ({ navigation }: any) => {
               <Text style={[s.infoTxt, { color: "#C4B5FD" }]}>Yukpo génère un formulaire professionnel avec sections, logique de saut et contraintes. Exportable XLSForm pour KoBoCollect, ODK et SurveyCTO.</Text>
             </View>
             <Text style={s.sectionLabel}>Titre du formulaire *</Text>
-            <TextInput style={s.input} value={genIATitre} onChangeText={setGenIATitre} placeholder="Enquête satisfaction soins primaires" placeholderTextColor={COLORS.textMuted} />
+            <TextInput style={s.input} value={genIATitre} onChangeText={setGenIATitre} placeholder="Enquête satisfaction soins primaires" placeholderTextColor={C.textMuted} />
             <Text style={s.sectionLabel}>Population cible *</Text>
-            <TextInput style={s.input} value={genIAPop} onChangeText={setGenIAPop} placeholder="Patients, ménages, bénéficiaires" placeholderTextColor={COLORS.textMuted} />
+            <TextInput style={s.input} value={genIAPop} onChangeText={setGenIAPop} placeholder="Patients, ménages, bénéficiaires" placeholderTextColor={C.textMuted} />
             <Text style={s.sectionLabel}>Description du sujet *</Text>
-            <TextInput style={[s.input, s.textarea]} value={genIADesc} onChangeText={setGenIADesc} placeholder="Contexte, thèmes à couvrir, enjeux spécifiques…" placeholderTextColor={COLORS.textMuted} multiline numberOfLines={3} textAlignVertical="top" />
+            <TextInput style={[s.input, s.textarea]} value={genIADesc} onChangeText={setGenIADesc} placeholder="Contexte, thèmes à couvrir, enjeux spécifiques…" placeholderTextColor={C.textMuted} multiline numberOfLines={3} textAlignVertical="top" />
             <Text style={s.sectionLabel}>Objectif principal</Text>
-            <TextInput style={s.input} value={genIAObj} onChangeText={setGenIAObj} placeholder="Mesurer la satisfaction, identifier les barrières…" placeholderTextColor={COLORS.textMuted} />
+            <TextInput style={s.input} value={genIAObj} onChangeText={setGenIAObj} placeholder="Mesurer la satisfaction, identifier les barrières…" placeholderTextColor={C.textMuted} />
             <Text style={s.sectionLabel}>Nombre de questions</Text>
-            <TextInput style={s.input} value={genIANb} onChangeText={setGenIANb} keyboardType="numeric" placeholder="15" placeholderTextColor={COLORS.textMuted} />
+            <TextInput style={s.input} value={genIANb} onChangeText={setGenIANb} keyboardType="numeric" placeholder="15" placeholderTextColor={C.textMuted} />
           </ScrollView>
           <View style={s.modalFooter}>
             <TouchableOpacity style={[s.footerBtn, s.footerCancel]} onPress={() => setShowGenIA(false)}>
@@ -753,11 +757,11 @@ export const EnquetesScreen = ({ navigation }: any) => {
             <View style={s.modalHeader}>
               <View style={{ flex: 1 }}>
                 <Text style={s.modalTitle} numberOfLines={1}>{activeEtude.titre}</Text>
-                <Text style={{ color: COLORS.textMuted, fontSize: 12 }}>{activeEtude.n_transcriptions} entretien(s) · {activeEtude.n_themes} thème(s)</Text>
+                <Text style={{ color: C.textMuted, fontSize: 12 }}>{activeEtude.n_transcriptions} entretien(s) · {activeEtude.n_themes} thème(s)</Text>
               </View>
               <View style={{ flexDirection: "row", gap: 14 }}>
-                <TouchableOpacity onPress={handleShare}><Ionicons name="share-outline" size={22} color={COLORS.textPrimary} /></TouchableOpacity>
-                <TouchableOpacity onPress={() => setShowRapport(false)}><Ionicons name="close" size={24} color={COLORS.textPrimary} /></TouchableOpacity>
+                <TouchableOpacity onPress={handleShare}><Ionicons name="share-outline" size={22} color={C.textPrimary} /></TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowRapport(false)}><Ionicons name="close" size={24} color={C.textPrimary} /></TouchableOpacity>
               </View>
             </View>
             <ScrollView style={s.flex} contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
@@ -771,7 +775,7 @@ export const EnquetesScreen = ({ navigation }: any) => {
                         <View style={[s.sentBadge, { backgroundColor: (SENTIMENT_COLOR[t.sentiment] ?? "#94A3B8") + "33" }]}>
                           <Text style={[s.sentBadgeTxt, { color: SENTIMENT_COLOR[t.sentiment] ?? "#94A3B8" }]}>{t.sentiment}</Text>
                         </View>
-                        <Text style={{ color: COLORS.textMuted, fontSize: 11 }}>{t.frequence}× cité</Text>
+                        <Text style={{ color: C.textMuted, fontSize: 11 }}>{t.frequence}× cité</Text>
                       </View>
                       <Text style={s.themeLibelle}>{t.libelle}</Text>
                       {t.citations?.slice(0, 2).map((c, ci) => (
@@ -796,20 +800,20 @@ export const EnquetesScreen = ({ navigation }: any) => {
           <View style={s.modalHeader}>
             <Text style={s.modalTitle}>Nouvelle étude</Text>
             <TouchableOpacity onPress={() => { resetCreate(); setShowCreate(false); }}>
-              <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+              <Ionicons name="close" size={24} color={C.textPrimary} />
             </TouchableOpacity>
           </View>
           <ScrollView style={s.flex} contentContainerStyle={s.tabContent} keyboardShouldPersistTaps="handled">
             <Text style={s.sectionLabel}>Titre *</Text>
-            <TextInput style={s.input} value={titre} onChangeText={setTitre} placeholder="Perceptions de la couverture maladie…" placeholderTextColor={COLORS.textMuted} />
+            <TextInput style={s.input} value={titre} onChangeText={setTitre} placeholder="Perceptions de la couverture maladie…" placeholderTextColor={C.textMuted} />
             <Text style={s.sectionLabel}>Contexte & objectif *</Text>
-            <TextInput style={[s.input, s.textarea]} value={contexte} onChangeText={setContexte} placeholder="Décrivez la problématique et les objectifs de l'étude…" placeholderTextColor={COLORS.textMuted} multiline numberOfLines={4} textAlignVertical="top" />
+            <TextInput style={[s.input, s.textarea]} value={contexte} onChangeText={setContexte} placeholder="Décrivez la problématique et les objectifs de l'étude…" placeholderTextColor={C.textMuted} multiline numberOfLines={4} textAlignVertical="top" />
             <Text style={s.sectionLabel}>Questions de recherche (une par ligne)</Text>
-            <TextInput style={[s.input, s.textarea]} value={questions} onChangeText={setQuestions} placeholder={"Quels sont les obstacles ?\nQuelle est la perception du système ?"} placeholderTextColor={COLORS.textMuted} multiline numberOfLines={3} textAlignVertical="top" />
+            <TextInput style={[s.input, s.textarea]} value={questions} onChangeText={setQuestions} placeholder={"Quels sont les obstacles ?\nQuelle est la perception du système ?"} placeholderTextColor={C.textMuted} multiline numberOfLines={3} textAlignVertical="top" />
             <Text style={s.sectionLabel}>Terrain / Zone</Text>
-            <TextInput style={s.input} value={terrain} onChangeText={setTerrain} placeholder="Douala-Bépanda, Marché central Yaoundé…" placeholderTextColor={COLORS.textMuted} />
+            <TextInput style={s.input} value={terrain} onChangeText={setTerrain} placeholder="Douala-Bépanda, Marché central Yaoundé…" placeholderTextColor={C.textMuted} />
             <Text style={s.sectionLabel}>Population cible</Text>
-            <TextInput style={s.input} value={population} onChangeText={setPopulation} placeholder="Commerçants, ménages ruraux, étudiants…" placeholderTextColor={COLORS.textMuted} />
+            <TextInput style={s.input} value={population} onChangeText={setPopulation} placeholder="Commerçants, ménages ruraux, étudiants…" placeholderTextColor={C.textMuted} />
 
             <Text style={s.sectionLabel}>Mode d'étude</Text>
             {MODES.map(m => (
@@ -854,74 +858,78 @@ export const EnquetesScreen = ({ navigation }: any) => {
 const AnalyseMobileCard = ({ icon, couleur, titre, desc, loading, disabled, done, onPress }: {
   icon: string; couleur: string; titre: string; desc: string;
   loading: boolean; disabled: boolean; done: boolean; onPress: () => void;
-}) => (
-  <TouchableOpacity
-    style={[s.analyseCard, { borderColor: couleur + "33", backgroundColor: couleur + "0D" }]}
-    onPress={onPress}
-    disabled={disabled || loading}
-    activeOpacity={0.8}
-  >
-    <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
-      <View style={[s.analyseIcon, { backgroundColor: couleur + "22" }]}>
-        <Ionicons name={icon as any} size={18} color={couleur} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 3 }}>
-          <Text style={[s.analyseTitle, disabled && { opacity: 0.5 }]}>{titre}</Text>
-          {done && <Ionicons name="checkmark-circle" size={14} color="#22C55E" />}
+}) => {
+  const C = useColors();
+  const s = useMemo(() => makeS(C), [C]);
+  return (
+    <TouchableOpacity
+      style={[s.analyseCard, { borderColor: couleur + "33", backgroundColor: couleur + "0D" }]}
+      onPress={onPress}
+      disabled={disabled || loading}
+      activeOpacity={0.8}
+    >
+      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12 }}>
+        <View style={[s.analyseIcon, { backgroundColor: couleur + "22" }]}>
+          <Ionicons name={icon as any} size={18} color={couleur} />
         </View>
-        <Text style={[s.analyseDesc, disabled && { opacity: 0.4 }]}>{desc}</Text>
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 3 }}>
+            <Text style={[s.analyseTitle, disabled && { opacity: 0.5 }]}>{titre}</Text>
+            {done && <Ionicons name="checkmark-circle" size={14} color="#22C55E" />}
+          </View>
+          <Text style={[s.analyseDesc, disabled && { opacity: 0.4 }]}>{desc}</Text>
+        </View>
+        {loading
+          ? <ActivityIndicator size="small" color={couleur} />
+          : <View style={[s.analyseBtn, { backgroundColor: couleur, opacity: disabled ? 0.4 : 1 }]}>
+              <Ionicons name="play" size={12} color="#fff" />
+            </View>}
       </View>
-      {loading
-        ? <ActivityIndicator size="small" color={couleur} />
-        : <View style={[s.analyseBtn, { backgroundColor: couleur, opacity: disabled ? 0.4 : 1 }]}>
-            <Ionicons name="play" size={12} color="#fff" />
-          </View>}
-    </View>
-  </TouchableOpacity>
-);
+    </TouchableOpacity>
+  );
+};
 
 // ── Styles markdown ───────────────────────────────────────────────────────────
 
-const mdStyles: Record<string, object> = {
-  body:       { color: COLORS.textPrimary, fontSize: 14, lineHeight: 22 },
-  heading1:   { color: COLORS.textPrimary, fontSize: 20, fontWeight: "bold", marginTop: 16, marginBottom: 8 },
-  heading2:   { color: COLORS.textPrimary, fontSize: 17, fontWeight: "bold", marginTop: 14, marginBottom: 6 },
-  heading3:   { color: COLORS.textPrimary, fontSize: 15, fontWeight: "600", marginTop: 10, marginBottom: 4 },
+const makeMdStyles = (C: Colors): Record<string, object> => ({
+  body:       { color: C.textPrimary, fontSize: 14, lineHeight: 22 },
+  heading1:   { color: C.textPrimary, fontSize: 20, fontWeight: "bold", marginTop: 16, marginBottom: 8 },
+  heading2:   { color: C.textPrimary, fontSize: 17, fontWeight: "bold", marginTop: 14, marginBottom: 6 },
+  heading3:   { color: C.textPrimary, fontSize: 15, fontWeight: "600", marginTop: 10, marginBottom: 4 },
   blockquote: { borderLeftWidth: 3, borderLeftColor: "#7B3FE4", paddingLeft: 12, marginVertical: 6, opacity: 0.85 },
-};
+});
 
 // ── StyleSheet ────────────────────────────────────────────────────────────────
 
-const s = StyleSheet.create({
-  container:    { flex: 1, backgroundColor: COLORS.bg },
+const makeS = (C: Colors) => StyleSheet.create({
+  container:    { flex: 1, backgroundColor: C.bg },
   flex:         { flex: 1 },
   header:       { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: Platform.OS === "ios" ? 60 : 20, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" },
-  headerTitle:  { fontSize: 22, fontWeight: "bold", color: COLORS.textPrimary },
-  headerSub:    { fontSize: 11, color: COLORS.textMuted, marginTop: 2 },
+  headerTitle:  { fontSize: 22, fontWeight: "bold", color: C.textPrimary },
+  headerSub:    { fontSize: 11, color: C.textMuted, marginTop: 2 },
   addBtn:       { width: 40, height: 40, borderRadius: 12, backgroundColor: "#7B3FE4", alignItems: "center", justifyContent: "center" },
   content:      { padding: 16, paddingBottom: 40, gap: 10 },
 
   empty:        { alignItems: "center", paddingVertical: 48, paddingHorizontal: 24 },
   emptyIcon:    { width: 72, height: 72, borderRadius: 20, backgroundColor: "rgba(123,63,228,0.15)", alignItems: "center", justifyContent: "center", marginBottom: 16 },
-  emptyTitle:   { fontSize: 18, fontWeight: "bold", color: COLORS.textPrimary, marginBottom: 8 },
-  emptyText:    { fontSize: 13, color: COLORS.textMuted, textAlign: "center", lineHeight: 20, marginBottom: 20 },
+  emptyTitle:   { fontSize: 18, fontWeight: "bold", color: C.textPrimary, marginBottom: 8 },
+  emptyText:    { fontSize: 13, color: C.textMuted, textAlign: "center", lineHeight: 20, marginBottom: 20 },
   emptyBtn:     { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#7B3FE4", paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
   emptyBtnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
 
   card:         { backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 16, padding: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.08)" },
   pipeStep:     { height: 4, borderRadius: 2 },
-  cardTitle:    { color: COLORS.textPrimary, fontWeight: "600", fontSize: 15, marginBottom: 3 },
-  cardCtx:      { color: COLORS.textMuted, fontSize: 12, lineHeight: 18 },
-  cardMeta:     { color: COLORS.textMuted, fontSize: 11 },
+  cardTitle:    { color: C.textPrimary, fontWeight: "600", fontSize: 15, marginBottom: 3 },
+  cardCtx:      { color: C.textMuted, fontSize: 12, lineHeight: 18 },
+  cardMeta:     { color: C.textMuted, fontSize: 11 },
   badge:        { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
   badgeTxt:     { fontSize: 10, fontWeight: "700" },
   modeBadge:    { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6, backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: "rgba(255,255,255,0.08)" },
   modeBadgeTxt: { fontSize: 10, color: "#94A3B8" },
 
-  modal:        { flex: 1, backgroundColor: COLORS.bg },
+  modal:        { flex: 1, backgroundColor: C.bg },
   modalHeader:  { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: Platform.OS === "ios" ? 56 : 20, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" },
-  modalTitle:   { fontSize: 18, fontWeight: "bold", color: COLORS.textPrimary, flex: 1 },
+  modalTitle:   { fontSize: 18, fontWeight: "bold", color: C.textPrimary, flex: 1 },
 
   tabs:         { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" },
   tab:          { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4, paddingVertical: 12 },
@@ -930,13 +938,13 @@ const s = StyleSheet.create({
   tabTxtActive: { color: "#A78BFA", fontWeight: "700" },
   tabContent:   { padding: 16, paddingBottom: 40 },
 
-  sectionLabel: { color: COLORS.textMuted, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6, marginTop: 10 },
-  input:        { backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: "#374151", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: COLORS.textPrimary, fontSize: 14 },
+  sectionLabel: { color: C.textMuted, fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6, marginTop: 10 },
+  input:        { backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: C.bgCardBorder, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: C.textPrimary, fontSize: 14 },
   textarea:     { minHeight: 80 },
   modalFooter:  { flexDirection: "row", gap: 10, paddingHorizontal: 20, paddingBottom: Platform.OS === "ios" ? 32 : 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" },
   footerBtn:    { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: "center", flexDirection: "row", justifyContent: "center", gap: 6 },
-  footerCancel: { backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: "#374151" },
-  footerCancelTxt: { color: COLORS.textMuted, fontWeight: "600" },
+  footerCancel: { backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: C.bgCardBorder },
+  footerCancelTxt: { color: C.textMuted, fontWeight: "600" },
   footerSave:   { backgroundColor: "#7B3FE4" },
   footerSaveTxt:{ color: "#fff", fontWeight: "700" },
 
@@ -953,8 +961,8 @@ const s = StyleSheet.create({
 
   genIACard:    { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: "rgba(123,63,228,0.08)", borderRadius: 14, padding: 14, borderWidth: 1, borderColor: "rgba(123,63,228,0.2)" },
   genIAIcon:    { width: 44, height: 44, borderRadius: 12, backgroundColor: "rgba(123,63,228,0.15)", alignItems: "center", justifyContent: "center" },
-  genIATitle:   { color: COLORS.textPrimary, fontWeight: "600", fontSize: 14, marginBottom: 3 },
-  genIADesc:    { color: COLORS.textMuted, fontSize: 12, lineHeight: 17 },
+  genIATitle:   { color: C.textPrimary, fontWeight: "600", fontSize: 14, marginBottom: 3 },
+  genIADesc:    { color: C.textMuted, fontSize: 12, lineHeight: 17 },
 
   divider:      { height: 1, backgroundColor: "rgba(255,255,255,0.06)", marginVertical: 8 },
   sectionChip:  { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: "rgba(123,63,228,0.3)", backgroundColor: "rgba(123,63,228,0.1)" },
@@ -968,21 +976,21 @@ const s = StyleSheet.create({
 
   analyseCard:  { borderRadius: 14, borderWidth: 1, padding: 14 },
   analyseIcon:  { width: 38, height: 38, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  analyseTitle: { color: COLORS.textPrimary, fontWeight: "600", fontSize: 14 },
-  analyseDesc:  { color: COLORS.textMuted, fontSize: 12, lineHeight: 17 },
+  analyseTitle: { color: C.textPrimary, fontWeight: "600", fontSize: 14 },
+  analyseDesc:  { color: C.textMuted, fontSize: 12, lineHeight: 17 },
   analyseBtn:   { width: 28, height: 28, borderRadius: 8, alignItems: "center", justifyContent: "center" },
 
-  modeCard:     { backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 12, borderWidth: 1, borderColor: "#374151", marginBottom: 6 },
+  modeCard:     { backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 12, borderWidth: 1, borderColor: C.bgCardBorder, marginBottom: 6 },
   modeCardActive:{ borderColor: "#7B3FE4", backgroundColor: "rgba(123,63,228,0.08)" },
-  modeLabel:    { color: COLORS.textPrimary, fontWeight: "600", fontSize: 14 },
-  modeDesc:     { color: COLORS.textMuted, fontSize: 12, marginTop: 2 },
-  methChip:     { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: "#374151", backgroundColor: "rgba(255,255,255,0.04)" },
+  modeLabel:    { color: C.textPrimary, fontWeight: "600", fontSize: 14 },
+  modeDesc:     { color: C.textMuted, fontSize: 12, marginTop: 2 },
+  methChip:     { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: C.bgCardBorder, backgroundColor: "rgba(255,255,255,0.04)" },
   methChipActive:{ borderColor: "#7B3FE4", backgroundColor: "rgba(123,63,228,0.1)" },
-  methChipTxt:  { color: COLORS.textMuted, fontSize: 12 },
+  methChipTxt:  { color: C.textMuted, fontSize: 12 },
 
-  sectionTitle: { color: COLORS.textPrimary, fontSize: 16, fontWeight: "bold", marginBottom: 12 },
+  sectionTitle: { color: C.textPrimary, fontSize: 16, fontWeight: "bold", marginBottom: 12 },
   themeCard:    { backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.08)", marginBottom: 10 },
-  themeLibelle: { color: COLORS.textPrimary, fontWeight: "600", fontSize: 14, marginBottom: 6 },
+  themeLibelle: { color: C.textPrimary, fontWeight: "600", fontSize: 14, marginBottom: 6 },
   citation:     { color: "#93C5FD", fontSize: 12, fontStyle: "italic", lineHeight: 18, marginTop: 4, paddingLeft: 8, borderLeftWidth: 2, borderLeftColor: "#7B3FE4" },
   sentBadge:    { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
   sentBadgeTxt: { fontSize: 10, fontWeight: "600" },

@@ -8,7 +8,7 @@ import {
   RefreshControl, Linking, Alert, ActivityIndicator, TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS } from "@/store";
+import { useColors, type Colors } from "@/store";
 import { marchesApi } from "@/api/client";
 
 const formatDate = (iso?: string | null) => {
@@ -19,6 +19,8 @@ const formatDate = (iso?: string | null) => {
 };
 
 export const MarchesScreen = () => {
+  const C = useColors();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const [marches, setMarches]         = useState<any[]>([]);
   const [loading, setLoading]         = useState(true);
   const [refreshing, setRefreshing]   = useState(false);
@@ -27,7 +29,6 @@ export const MarchesScreen = () => {
   const [filtreSecteur, setFiltreSecteur] = useState("");
   const [filtreSource, setFiltreSource]   = useState("");
 
-  // Unique secteurs / sources from loaded data
   const secteurs = useMemo(
     () => [...new Set(marches.map((m: any) => m.secteur).filter(Boolean) as string[])],
     [marches],
@@ -90,7 +91,7 @@ export const MarchesScreen = () => {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={C.primary} />
         <Text style={styles.loadingText}>Chargement des appels d'offres…</Text>
       </View>
     );
@@ -100,7 +101,7 @@ export const MarchesScreen = () => {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={C.primary} />}
     >
       {/* En-tête */}
       <View style={styles.header}>
@@ -129,25 +130,25 @@ export const MarchesScreen = () => {
         </TouchableOpacity>
       </View>
 
-      {/* ── Barre de recherche ──────────────────────────────────────────────── */}
+      {/* Barre de recherche */}
       <View style={styles.searchBar}>
-        <Ionicons name="search-outline" size={15} color={COLORS.textMuted} />
+        <Ionicons name="search-outline" size={15} color={C.textMuted} />
         <TextInput
           style={styles.searchInput}
           placeholder="Titre, organisme, lieu…"
-          placeholderTextColor={COLORS.textMuted}
+          placeholderTextColor={C.textMuted}
           value={keyword}
           onChangeText={setKeyword}
           returnKeyType="search"
         />
         {keyword.length > 0 && (
           <TouchableOpacity onPress={() => setKeyword("")}>
-            <Ionicons name="close-circle" size={16} color={COLORS.textMuted} />
+            <Ionicons name="close-circle" size={16} color={C.textMuted} />
           </TouchableOpacity>
         )}
       </View>
 
-      {/* ── Chips secteur ───────────────────────────────────────────────────── */}
+      {/* Chips secteur */}
       {secteurs.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}>
           <View style={styles.chipsRow}>
@@ -165,7 +166,7 @@ export const MarchesScreen = () => {
         </ScrollView>
       )}
 
-      {/* ── Chips source ────────────────────────────────────────────────────── */}
+      {/* Chips source */}
       {sources.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}>
           <View style={styles.chipsRow}>
@@ -183,28 +184,26 @@ export const MarchesScreen = () => {
         </ScrollView>
       )}
 
-      {/* Reset filtres */}
       {filtresActifs ? (
         <TouchableOpacity
           style={styles.resetBtn}
           onPress={() => { setKeyword(""); setFiltreSecteur(""); setFiltreSource(""); }}
         >
-          <Ionicons name="close-outline" size={14} color={COLORS.textMuted} />
+          <Ionicons name="close-outline" size={14} color={C.textMuted} />
           <Text style={styles.resetBtnText}>Supprimer les filtres</Text>
         </TouchableOpacity>
       ) : (
         <View style={styles.sourcesCard}>
-          <Ionicons name="globe-outline" size={14} color={COLORS.primary} />
+          <Ionicons name="globe-outline" size={14} color={C.primary} />
           <Text style={styles.sourcesText}>
             Sources : dgMarket (Banque Mondiale) · UNGM (ONU) · ARMP · Plateformes nationales
           </Text>
         </View>
       )}
 
-      {/* Liste */}
       {marches.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Ionicons name="hammer-outline" size={36} color={COLORS.textMuted} />
+          <Ionicons name="hammer-outline" size={36} color={C.textMuted} />
           <Text style={styles.emptyTitre}>Aucun appel d'offres chargé</Text>
           <Text style={styles.emptyTexte}>
             Yukpo surveille les plateformes ARMP, dgMarket (Banque Mondiale), UNGM et les marchés publics.
@@ -227,7 +226,7 @@ export const MarchesScreen = () => {
         </View>
       ) : marchesFiltres.length === 0 ? (
         <View style={styles.emptyCard}>
-          <Ionicons name="filter-outline" size={36} color={COLORS.textMuted} />
+          <Ionicons name="filter-outline" size={36} color={C.textMuted} />
           <Text style={styles.emptyTitre}>Aucun résultat pour ces filtres</Text>
           <TouchableOpacity
             style={[styles.btnRecherche, { marginTop: 16, backgroundColor: "#374151" }]}
@@ -285,7 +284,7 @@ export const MarchesScreen = () => {
                 ) : null}
               </View>
               {m.url ? (
-                <Ionicons name="open-outline" size={16} color={COLORS.textMuted} />
+                <Ionicons name="open-outline" size={16} color={C.textMuted} />
               ) : null}
             </TouchableOpacity>
           ))}
@@ -295,18 +294,18 @@ export const MarchesScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container:   { flex: 1, backgroundColor: COLORS.background },
+const makeStyles = (C: Colors) => StyleSheet.create({
+  container:   { flex: 1, backgroundColor: C.bg },
   content:     { padding: 16, paddingBottom: 80 },
-  centered:    { flex: 1, justifyContent: "center", alignItems: "center", gap: 12, backgroundColor: COLORS.background },
-  loadingText: { color: COLORS.textMuted, fontSize: 14 },
+  centered:    { flex: 1, justifyContent: "center", alignItems: "center", gap: 12, backgroundColor: C.bg },
+  loadingText: { color: C.textMuted, fontSize: 14 },
 
   header: {
     flexDirection: "row", justifyContent: "space-between",
     alignItems: "flex-start", marginBottom: 12,
   },
-  titre:    { fontSize: 20, fontWeight: "700", color: COLORS.text, marginBottom: 2 },
-  sousTitre:{ fontSize: 12, color: COLORS.textMuted },
+  titre:    { fontSize: 20, fontWeight: "700", color: C.textPrimary, marginBottom: 2 },
+  sousTitre:{ fontSize: 12, color: C.textMuted },
 
   btnRecherche: {
     flexDirection: "row", alignItems: "center", gap: 6,
@@ -318,57 +317,57 @@ const styles = StyleSheet.create({
 
   searchBar: {
     flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: "#0f172a", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10,
-    borderWidth: 1, borderColor: "#1e293b", marginBottom: 10,
+    backgroundColor: C.bgInput, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10,
+    borderWidth: 1, borderColor: C.bgCardBorder, marginBottom: 10,
   },
-  searchInput: { flex: 1, color: COLORS.text, fontSize: 14 },
+  searchInput: { flex: 1, color: C.textPrimary, fontSize: 14 },
 
   chipsScroll: { marginBottom: 6 },
   chipsRow: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 2, paddingBottom: 4 },
-  chipsLabel: { color: COLORS.textMuted, fontSize: 11, marginRight: 2 },
+  chipsLabel: { color: C.textMuted, fontSize: 11, marginRight: 2 },
   chip: {
     paddingHorizontal: 10, paddingVertical: 5,
-    backgroundColor: "#1e293b", borderRadius: 20,
-    borderWidth: 1, borderColor: "#334155",
+    backgroundColor: C.bgCard, borderRadius: 20,
+    borderWidth: 1, borderColor: C.bgCardBorder,
   },
   chipActive: { backgroundColor: "#1e3a5f", borderColor: "#3b82f6" },
-  chipText:   { color: COLORS.textMuted, fontSize: 11, fontWeight: "600" },
+  chipText:   { color: C.textMuted, fontSize: 11, fontWeight: "600" },
   chipTextActive: { color: "#93C5FD" },
 
   resetBtn: {
     flexDirection: "row", alignItems: "center", gap: 4, alignSelf: "flex-end",
     paddingVertical: 4, paddingHorizontal: 8, marginBottom: 8,
   },
-  resetBtnText: { color: COLORS.textMuted, fontSize: 11 },
+  resetBtnText: { color: C.textMuted, fontSize: 11 },
 
   sourcesCard: {
     flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: "#0f172a", borderRadius: 12, padding: 10,
+    backgroundColor: C.bgInput, borderRadius: 12, padding: 10,
     borderWidth: 1, borderColor: "#1e3a5f", marginBottom: 16,
   },
-  sourcesText: { color: COLORS.textMuted, fontSize: 11, flex: 1, lineHeight: 16 },
+  sourcesText: { color: C.textMuted, fontSize: 11, flex: 1, lineHeight: 16 },
 
   emptyCard: {
-    backgroundColor: "#111827", borderRadius: 16,
+    backgroundColor: C.bgCard, borderRadius: 16,
     padding: 24, alignItems: "center", gap: 8, marginTop: 16,
-    borderWidth: 1, borderColor: "#1F2937",
+    borderWidth: 1, borderColor: C.bgCardBorder,
   },
-  emptyTitre: { color: COLORS.text, fontSize: 16, fontWeight: "600", marginTop: 8 },
-  emptyTexte: { color: COLORS.textMuted, fontSize: 13, textAlign: "center", lineHeight: 20 },
+  emptyTitre: { color: C.textPrimary, fontSize: 16, fontWeight: "600", marginTop: 8 },
+  emptyTexte: { color: C.textMuted, fontSize: 13, textAlign: "center", lineHeight: 20 },
 
   marcheCard: {
-    backgroundColor: "#111827", borderRadius: 14, padding: 14,
+    backgroundColor: C.bgCard, borderRadius: 14, padding: 14,
     flexDirection: "row", alignItems: "flex-start", gap: 12,
-    borderWidth: 1, borderColor: "#1F2937",
+    borderWidth: 1, borderColor: C.bgCardBorder,
   },
   marcheIconWrap: {
     width: 40, height: 40, borderRadius: 10,
     backgroundColor: "#1e3a5f", justifyContent: "center", alignItems: "center",
   },
-  marcheTitre: { color: COLORS.text, fontSize: 14, fontWeight: "600", lineHeight: 20 },
+  marcheTitre: { color: C.textPrimary, fontSize: 14, fontWeight: "600", lineHeight: 20 },
   marcheMeta:  { flexDirection: "row", gap: 10, marginTop: 4, flexWrap: "wrap" },
-  marcheOrg:   { color: COLORS.textMuted, fontSize: 11 },
-  marcheLieu:  { color: COLORS.textMuted, fontSize: 11 },
+  marcheOrg:   { color: C.textMuted, fontSize: 11 },
+  marcheLieu:  { color: C.textMuted, fontSize: 11 },
   marcheTags:  { flexDirection: "row", gap: 6, marginTop: 6, alignItems: "center", flexWrap: "wrap" },
   tag: {
     paddingHorizontal: 8, paddingVertical: 2,
@@ -378,7 +377,7 @@ const styles = StyleSheet.create({
   tagActive: { borderColor: "#3b82f6" },
   tagText:      { color: "#60A5FA", fontSize: 10, fontWeight: "600" },
   marcheDate:   { color: "#4B5563", fontSize: 10, marginLeft: "auto" },
-  marcheResume: { color: COLORS.textMuted, fontSize: 12, marginTop: 6, lineHeight: 18 },
+  marcheResume: { color: C.textMuted, fontSize: 12, marginTop: 6, lineHeight: 18 },
 });
 
 export default MarchesScreen;

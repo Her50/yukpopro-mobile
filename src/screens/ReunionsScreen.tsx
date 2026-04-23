@@ -1,16 +1,16 @@
 /**
  * Réunions IA — Yukpo Pro Mobile
- * Enregistrement audio (expo-av) + transcription Whisper multilingue + rapport IA
+ * Enregistrement audio (expo-av) + transcription IA multilingue + rapport automatique
  * Identifie automatiquement participants, décisions et plan d'action.
  */
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet,
   Modal, Alert, ActivityIndicator, Share, Platform, Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Markdown from "react-native-markdown-display";
-import { COLORS } from "@/store";
+import { useColors, type Colors } from "@/store";
 import { reunionsApi, generateurApi } from "@/api/client";
 
 // Audio — expo-av (optionnel : si non installé, mode notes uniquement)
@@ -36,7 +36,7 @@ interface Reunion {
   langue?: string;
 }
 
-// ── Langues Whisper ───────────────────────────────────────────────────────────
+// ── Langues de transcription ──────────────────────────────────────────────────
 
 const LANGUES = [
   { code: "auto", label: "Détection auto" },
@@ -84,6 +84,9 @@ function buildPrompt(r: Reunion): string {
 // ── Composant principal ───────────────────────────────────────────────────────
 
 export const ReunionsScreen = ({ navigation }: any) => {
+  const C = useColors();
+  const styles = useMemo(() => makeStyles(C), [C]);
+  const rapportMarkdownStyles = useMemo(() => makeRapportMarkdownStyles(C), [C]);
   const [reunions, setReunions]         = useState<Reunion[]>([]);
   const [showForm, setShowForm]         = useState(false);
   const [selectedRapport, setSelected] = useState<Reunion | null>(null);
@@ -227,7 +230,7 @@ export const ReunionsScreen = ({ navigation }: any) => {
         : `${texte.length} caractères transcrits (${res.langue_detectee}).`;
       Alert.alert("Transcription réussie !", msg);
     } catch (err: any) {
-      Alert.alert("Erreur transcription", err?.response?.data?.detail || err.message || "Vérifiez la clé API OpenAI.");
+      Alert.alert("Erreur transcription", err?.response?.data?.detail || err.message || "Service YukpoPro temporairement indisponible.");
     } finally {
       setTranscribing(false);
     }
@@ -343,7 +346,7 @@ export const ReunionsScreen = ({ navigation }: any) => {
                   {r.participants ? <Text style={styles.cardDate}>{r.participants.split(",")[0].trim()}</Text> : null}
                   {r.dureeEnreg ? (
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-                      <Ionicons name="mic-outline" size={11} color={COLORS.textMuted} />
+                      <Ionicons name="mic-outline" size={11} color={C.textMuted} />
                       <Text style={styles.cardDate}>{fmtDur(r.dureeEnreg)}</Text>
                     </View>
                   ) : null}
@@ -352,7 +355,7 @@ export const ReunionsScreen = ({ navigation }: any) => {
               <View style={styles.cardStatus}>
                 {r.statut === "termine"   && <Ionicons name="checkmark-circle" size={18} color="#22C55E" />}
                 {r.statut === "analyse"   && <ActivityIndicator size="small" color="#F59E0B" />}
-                {r.statut === "brouillon" && <Ionicons name="time-outline" size={18} color={COLORS.textMuted} />}
+                {r.statut === "brouillon" && <Ionicons name="time-outline" size={18} color={C.textMuted} />}
               </View>
             </View>
 
@@ -396,7 +399,7 @@ export const ReunionsScreen = ({ navigation }: any) => {
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Nouvelle réunion</Text>
             <TouchableOpacity onPress={() => { resetForm(); setShowForm(false); }}>
-              <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+              <Ionicons name="close" size={24} color={C.textPrimary} />
             </TouchableOpacity>
           </View>
 
@@ -409,7 +412,7 @@ export const ReunionsScreen = ({ navigation }: any) => {
               value={titre}
               onChangeText={setTitre}
               placeholder="Réunion mensuelle équipe finance"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={C.textMuted}
             />
 
             {/* Date */}
@@ -419,7 +422,7 @@ export const ReunionsScreen = ({ navigation }: any) => {
               value={date}
               onChangeText={setDate}
               placeholder="JJ/MM/AAAA"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={C.textMuted}
             />
 
             {/* Participants */}
@@ -429,14 +432,14 @@ export const ReunionsScreen = ({ navigation }: any) => {
               value={participants}
               onChangeText={setParticipants}
               placeholder="Jean Dupont, Marie Kouassi, …"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={C.textMuted}
             />
 
             {/* Langue */}
             <Text style={styles.label}>Langue de la réunion</Text>
             <TouchableOpacity style={[styles.input, styles.picker]} onPress={() => setShowLangs(!showLangs)}>
-              <Text style={{ color: COLORS.textPrimary, flex: 1 }}>{langueLabel}</Text>
-              <Ionicons name={showLangs ? "chevron-up" : "chevron-down"} size={16} color={COLORS.textMuted} />
+              <Text style={{ color: C.textPrimary, flex: 1 }}>{langueLabel}</Text>
+              <Ionicons name={showLangs ? "chevron-up" : "chevron-down"} size={16} color={C.textMuted} />
             </TouchableOpacity>
             {showLangs && (
               <View style={styles.dropdown}>
@@ -502,7 +505,7 @@ export const ReunionsScreen = ({ navigation }: any) => {
               value={notes}
               onChangeText={setNotes}
               placeholder="Saisissez les notes ou utilisez l'enregistrement…"
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={C.textMuted}
               multiline
               numberOfLines={6}
               textAlignVertical="top"
@@ -539,7 +542,7 @@ export const ReunionsScreen = ({ navigation }: any) => {
             <View style={styles.modalHeader}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.modalTitle} numberOfLines={1}>{selectedRapport.titre}</Text>
-                <Text style={{ color: COLORS.textMuted, fontSize: 12 }}>
+                <Text style={{ color: C.textMuted, fontSize: 12 }}>
                   {selectedRapport.date}{selectedRapport.dureeEnreg ? ` · ${fmtDur(selectedRapport.dureeEnreg)}` : ""}
                 </Text>
               </View>
@@ -550,10 +553,10 @@ export const ReunionsScreen = ({ navigation }: any) => {
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity onPress={() => handleShare(selectedRapport.rapport || "", selectedRapport.titre)}>
-                  <Ionicons name="share-outline" size={22} color={COLORS.textPrimary} />
+                  <Ionicons name="share-outline" size={22} color={C.textPrimary} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setSelected(null)}>
-                  <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+                  <Ionicons name="close" size={24} color={C.textPrimary} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -569,48 +572,48 @@ export const ReunionsScreen = ({ navigation }: any) => {
 
 // ── Markdown styles (rapport modal) ──────────────────────────────────────────
 
-const rapportMarkdownStyles: Record<string, object> = {
-  body:         { color: COLORS.textPrimary, fontSize: 14, lineHeight: 22 },
-  heading1:     { color: COLORS.textPrimary, fontSize: 20, fontWeight: "bold", marginTop: 16, marginBottom: 8 },
-  heading2:     { color: COLORS.textPrimary, fontSize: 17, fontWeight: "bold", marginTop: 14, marginBottom: 6 },
-  heading3:     { color: COLORS.textPrimary, fontSize: 15, fontWeight: "600", marginTop: 10, marginBottom: 4 },
-  strong:       { fontWeight: "bold", color: COLORS.textPrimary },
+const makeRapportMarkdownStyles = (C: Colors): Record<string, object> => ({
+  body:         { color: C.textPrimary, fontSize: 14, lineHeight: 22 },
+  heading1:     { color: C.textPrimary, fontSize: 20, fontWeight: "bold", marginTop: 16, marginBottom: 8 },
+  heading2:     { color: C.textPrimary, fontSize: 17, fontWeight: "bold", marginTop: 14, marginBottom: 6 },
+  heading3:     { color: C.textPrimary, fontSize: 15, fontWeight: "600", marginTop: 10, marginBottom: 4 },
+  strong:       { fontWeight: "bold", color: C.textPrimary },
   em:           { fontStyle: "italic" },
   bullet_list:  { marginVertical: 4 },
   ordered_list: { marginVertical: 4 },
-  list_item:    { color: COLORS.textPrimary, fontSize: 14, lineHeight: 22 },
+  list_item:    { color: C.textPrimary, fontSize: 14, lineHeight: 22 },
   code_inline:  { backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 4, paddingHorizontal: 4, fontFamily: "monospace", color: "#A5B4FC" },
   fence:        { backgroundColor: "rgba(255,255,255,0.06)", borderRadius: 8, padding: 12, marginVertical: 8, color: "#E2E8F0", fontFamily: "monospace", fontSize: 12 },
   blockquote:   { borderLeftWidth: 3, borderLeftColor: "#3B82F6", paddingLeft: 12, marginVertical: 6, opacity: 0.85 },
   hr:           { borderBottomWidth: 1, borderBottomColor: "#374151", marginVertical: 12 },
   table:        { borderWidth: 1, borderColor: "rgba(255,255,255,0.15)", borderRadius: 8, marginVertical: 8 },
-  th:           { backgroundColor: "rgba(59,130,246,0.15)", padding: 8, color: COLORS.textPrimary, fontWeight: "bold", fontSize: 12 },
-  td:           { padding: 8, color: COLORS.textPrimary, fontSize: 12, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" },
-};
+  th:           { backgroundColor: "rgba(59,130,246,0.15)", padding: 8, color: C.textPrimary, fontWeight: "bold", fontSize: 12 },
+  td:           { padding: 8, color: C.textPrimary, fontSize: 12, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" },
+});
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  container:        { flex: 1, backgroundColor: COLORS.bg },
+const makeStyles = (C: Colors) => StyleSheet.create({
+  container:        { flex: 1, backgroundColor: C.bg },
   flex:             { flex: 1 },
   header:           { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: Platform.OS === "ios" ? 60 : 20, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" },
-  headerTitle:      { fontSize: 22, fontWeight: "bold", color: COLORS.textPrimary },
-  headerSub:        { fontSize: 12, color: COLORS.textMuted, marginTop: 2 },
+  headerTitle:      { fontSize: 22, fontWeight: "bold", color: C.textPrimary },
+  headerSub:        { fontSize: 12, color: C.textMuted, marginTop: 2 },
   addBtn:           { width: 40, height: 40, borderRadius: 12, backgroundColor: "#3B82F6", alignItems: "center", justifyContent: "center" },
   content:          { padding: 16, paddingBottom: 32, gap: 12 },
   empty:            { alignItems: "center", paddingVertical: 48, paddingHorizontal: 24 },
   emptyIcon:        { width: 72, height: 72, borderRadius: 20, backgroundColor: "rgba(59,130,246,0.15)", alignItems: "center", justifyContent: "center", marginBottom: 16 },
-  emptyTitle:       { fontSize: 18, fontWeight: "bold", color: COLORS.textPrimary, marginBottom: 8 },
-  emptyText:        { fontSize: 13, color: COLORS.textMuted, textAlign: "center", lineHeight: 20, marginBottom: 20 },
+  emptyTitle:       { fontSize: 18, fontWeight: "bold", color: C.textPrimary, marginBottom: 8 },
+  emptyText:        { fontSize: 13, color: C.textMuted, textAlign: "center", lineHeight: 20, marginBottom: 20 },
   emptyBtn:         { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#3B82F6", paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
   emptyBtnText:     { color: "#fff", fontWeight: "600", fontSize: 14 },
   card:             { backgroundColor: "rgba(255,255,255,0.05)", borderRadius: 16, padding: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.08)" },
   cardHeader:       { flexDirection: "row", alignItems: "flex-start", marginBottom: 6 },
   cardInfo:         { flex: 1 },
-  cardTitle:        { color: COLORS.textPrimary, fontWeight: "600", fontSize: 15 },
-  cardDate:         { color: COLORS.textMuted, fontSize: 11 },
+  cardTitle:        { color: C.textPrimary, fontWeight: "600", fontSize: 15 },
+  cardDate:         { color: C.textMuted, fontSize: 11 },
   cardStatus:       { marginLeft: 8, marginTop: 2 },
-  cardNotes:        { color: COLORS.textMuted, fontSize: 12, lineHeight: 18, marginBottom: 10 },
+  cardNotes:        { color: C.textMuted, fontSize: 12, lineHeight: 18, marginBottom: 10 },
   cardActions:      { flexDirection: "row", gap: 8 },
   btn:              { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 },
   btnText:          { color: "#fff", fontSize: 12, fontWeight: "600" },
@@ -621,18 +624,18 @@ const styles = StyleSheet.create({
   btnDisabled:      { opacity: 0.5 },
 
   // Modal
-  modal:            { flex: 1, backgroundColor: COLORS.bg },
+  modal:            { flex: 1, backgroundColor: C.bg },
   modalHeader:      { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: Platform.OS === "ios" ? 56 : 20, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.08)" },
-  modalTitle:       { fontSize: 18, fontWeight: "bold", color: COLORS.textPrimary, flex: 1 },
+  modalTitle:       { fontSize: 18, fontWeight: "bold", color: C.textPrimary, flex: 1 },
   modalContent:     { padding: 20, paddingBottom: 32, gap: 4 },
-  label:            { color: COLORS.textMuted, fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, marginTop: 12 },
-  input:            { backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: "#374151", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: COLORS.textPrimary, fontSize: 14 },
+  label:            { color: C.textMuted, fontSize: 11, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, marginTop: 12 },
+  input:            { backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: "#374151", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, color: C.textPrimary, fontSize: 14 },
   textarea:         { minHeight: 120 },
   picker:           { flexDirection: "row", alignItems: "center" },
   dropdown:         { backgroundColor: "rgba(30,41,59,0.98)", borderWidth: 1, borderColor: "#374151", borderRadius: 12, marginTop: 4, overflow: "hidden" },
   dropdownItem:     { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 11 },
   dropdownItemActive:{ backgroundColor: "rgba(59,130,246,0.12)" },
-  dropdownText:     { color: COLORS.textPrimary, fontSize: 14 },
+  dropdownText:     { color: C.textPrimary, fontSize: 14 },
 
   // Enregistrement
   recBox:           { backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.08)", gap: 8 },
@@ -651,10 +654,10 @@ const styles = StyleSheet.create({
   modalFooter:      { flexDirection: "row", gap: 10, paddingHorizontal: 20, paddingBottom: Platform.OS === "ios" ? 32 : 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" },
   footerBtn:        { flex: 1, paddingVertical: 14, borderRadius: 12, alignItems: "center", flexDirection: "row", justifyContent: "center", gap: 6 },
   footerCancel:     { backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: "#374151" },
-  footerCancelText: { color: COLORS.textMuted, fontWeight: "600" },
+  footerCancelText: { color: C.textMuted, fontWeight: "600" },
   footerSave:       { backgroundColor: "#3B82F6" },
   footerSaveText:   { color: "#fff", fontWeight: "700" },
 
   rapportContent:   { padding: 20, paddingBottom: 40 },
-  rapportText:      { color: COLORS.textPrimary, fontSize: 14, lineHeight: 22 },
+  rapportText:      { color: C.textPrimary, fontSize: 14, lineHeight: 22 },
 });

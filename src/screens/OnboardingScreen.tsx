@@ -13,7 +13,7 @@ import {
   FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { COLORS, useAuthStore, useProfilStore } from "@/store";
+import { useColors, type Colors, useAuthStore, useProfilStore } from "@/store";
 import { profilApi } from "@/api/client";
 import { COUNTRIES, DEFAULT_COUNTRY, type Country } from "@/data/countries";
 
@@ -33,6 +33,8 @@ const METIERS = [
 ];
 
 export const OnboardingScreen = ({ navigation }: any) => {
+  const C = useColors();
+  const styles = useMemo(() => makeStyles(C), [C]);
   const { user } = useAuthStore();
   const { setProfil } = useProfilStore();
   const [metier, setMetier] = useState("");
@@ -115,7 +117,7 @@ export const OnboardingScreen = ({ navigation }: any) => {
                   <Ionicons
                     name={m.icon as any}
                     size={22}
-                    color={metier === m.value ? COLORS.primary : COLORS.textMuted}
+                    color={metier === m.value ? C.primary : C.textMuted}
                   />
                   <Text style={[styles.metierLabel, metier === m.value && styles.metierLabelActive]}>
                     {m.label}
@@ -145,14 +147,14 @@ export const OnboardingScreen = ({ navigation }: any) => {
             >
               <Text style={styles.paysFlag}>{pays.flag}</Text>
               <Text style={styles.paysName}>{pays.name}</Text>
-              <Ionicons name="chevron-down" size={18} color={COLORS.textMuted} />
+              <Ionicons name="chevron-down" size={18} color={C.textMuted} />
             </TouchableOpacity>
 
             <Text style={styles.label}>Entreprise / Organisation (optionnel)</Text>
             <TextInput
               style={styles.input}
               placeholder="Cabinet XYZ, ONG ABC..."
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={C.textMuted}
               value={entreprise}
               onChangeText={setEntreprise}
             />
@@ -178,7 +180,7 @@ export const OnboardingScreen = ({ navigation }: any) => {
 
             <View style={styles.actionRow}>
               <TouchableOpacity style={styles.backBtn} onPress={() => setStep(1)}>
-                <Ionicons name="arrow-back" size={18} color={COLORS.textSecondary} />
+                <Ionicons name="arrow-back" size={18} color={C.textSecondary} />
                 <Text style={styles.backBtnText}>Retour</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -207,13 +209,13 @@ export const OnboardingScreen = ({ navigation }: any) => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Choisir un pays</Text>
               <TouchableOpacity onPress={() => setShowPaysPicker(false)}>
-                <Ionicons name="close" size={24} color={COLORS.textPrimary} />
+                <Ionicons name="close" size={24} color={C.textPrimary} />
               </TouchableOpacity>
             </View>
             <TextInput
               style={styles.modalSearch}
               placeholder="Rechercher un pays..."
-              placeholderTextColor={COLORS.textMuted}
+              placeholderTextColor={C.textMuted}
               value={paysSearch}
               onChangeText={setPaysSearch}
               autoFocus
@@ -230,7 +232,7 @@ export const OnboardingScreen = ({ navigation }: any) => {
                   <Text style={styles.countryFlag}>{item.flag}</Text>
                   <Text style={styles.countryName}>{item.name}</Text>
                   {item.iso2 === pays.iso2 && (
-                    <Ionicons name="checkmark" size={18} color={COLORS.primary} />
+                    <Ionicons name="checkmark" size={18} color={C.primary} />
                   )}
                 </TouchableOpacity>
               )}
@@ -242,97 +244,97 @@ export const OnboardingScreen = ({ navigation }: any) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.bg },
+const makeStyles = (C: Colors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: C.bg },
   scroll: { padding: 24, paddingBottom: 48 },
   header: { alignItems: "center", marginBottom: 24 },
   logoCircle: {
     width: 72, height: 72, borderRadius: 18,
     backgroundColor: "#fff", alignItems: "center", justifyContent: "center",
     marginBottom: 12, padding: 8,
-    shadowColor: COLORS.primary,
+    shadowColor: C.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3, shadowRadius: 12, elevation: 8,
   },
   logoImage: { width: 54, height: 54 },
-  title: { color: COLORS.textPrimary, fontSize: 22, fontWeight: "700", marginBottom: 6 },
-  subtitle: { color: COLORS.textMuted, fontSize: 13, textAlign: "center" },
+  title: { color: C.textPrimary, fontSize: 22, fontWeight: "700", marginBottom: 6 },
+  subtitle: { color: C.textMuted, fontSize: 13, textAlign: "center" },
   progressBar: {
-    height: 4, backgroundColor: COLORS.bgCardBorder, borderRadius: 2,
+    height: 4, backgroundColor: C.bgCardBorder, borderRadius: 2,
     marginBottom: 28, overflow: "hidden",
   },
-  progressFill: { height: "100%", backgroundColor: COLORS.primary, borderRadius: 2 },
-  sectionTitle: { color: COLORS.textPrimary, fontSize: 16, fontWeight: "600", marginBottom: 16 },
+  progressFill: { height: "100%", backgroundColor: C.primary, borderRadius: 2 },
+  sectionTitle: { color: C.textPrimary, fontSize: 16, fontWeight: "600", marginBottom: 16 },
   metierGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 28 },
   metierCard: {
-    width: "47%", backgroundColor: COLORS.bgCard, borderWidth: 1,
-    borderColor: COLORS.bgCardBorder, borderRadius: 14, padding: 14,
+    width: "47%", backgroundColor: C.bgCard, borderWidth: 1,
+    borderColor: C.bgCardBorder, borderRadius: 14, padding: 14,
     alignItems: "center", gap: 8,
   },
-  metierCardActive: { borderColor: COLORS.primary, backgroundColor: `${COLORS.primary}20` },
-  metierLabel: { color: COLORS.textSecondary, fontSize: 12, textAlign: "center" },
-  metierLabelActive: { color: COLORS.primary, fontWeight: "600" },
-  label: { color: COLORS.textSecondary, fontSize: 13, fontWeight: "600", marginBottom: 8, marginTop: 16 },
+  metierCardActive: { borderColor: C.primary, backgroundColor: `${C.primary}20` },
+  metierLabel: { color: C.textSecondary, fontSize: 12, textAlign: "center" },
+  metierLabelActive: { color: C.primary, fontWeight: "600" },
+  label: { color: C.textSecondary, fontSize: 13, fontWeight: "600", marginBottom: 8, marginTop: 16 },
   // Pays selector
   paysSelector: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    backgroundColor: "#0F172A", borderWidth: 1, borderColor: COLORS.bgCardBorder,
+    backgroundColor: C.bgInput, borderWidth: 1, borderColor: C.bgCardBorder,
     borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14,
   },
   paysFlag: { fontSize: 22 },
-  paysName: { flex: 1, color: COLORS.textPrimary, fontSize: 15 },
+  paysName: { flex: 1, color: C.textPrimary, fontSize: 15 },
   input: {
-    backgroundColor: "#0F172A", borderWidth: 1, borderColor: COLORS.bgCardBorder,
+    backgroundColor: C.bgInput, borderWidth: 1, borderColor: C.bgCardBorder,
     borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12,
-    color: COLORS.textPrimary, fontSize: 15,
+    color: C.textPrimary, fontSize: 15,
   },
   niveauRow: { flexDirection: "row", gap: 10, marginTop: 4 },
   niveauBtn: {
-    flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: COLORS.bgCard,
-    borderWidth: 1, borderColor: COLORS.bgCardBorder, alignItems: "center",
+    flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: C.bgCard,
+    borderWidth: 1, borderColor: C.bgCardBorder, alignItems: "center",
   },
-  niveauBtnActive: { backgroundColor: `${COLORS.primary}30`, borderColor: COLORS.primary },
-  niveauBtnText: { color: COLORS.textMuted, fontSize: 14 },
-  niveauBtnTextActive: { color: COLORS.primary, fontWeight: "600" },
+  niveauBtnActive: { backgroundColor: `${C.primary}30`, borderColor: C.primary },
+  niveauBtnText: { color: C.textMuted, fontSize: 14 },
+  niveauBtnTextActive: { color: C.primary, fontWeight: "600" },
   actionRow: { flexDirection: "row", gap: 12, marginTop: 28 },
   backBtn: {
     flexDirection: "row", alignItems: "center", gap: 6,
     paddingHorizontal: 20, paddingVertical: 14, borderRadius: 14,
-    backgroundColor: COLORS.bgCard, borderWidth: 1, borderColor: COLORS.bgCardBorder,
+    backgroundColor: C.bgCard, borderWidth: 1, borderColor: C.bgCardBorder,
   },
-  backBtnText: { color: COLORS.textSecondary, fontWeight: "600" },
+  backBtnText: { color: C.textSecondary, fontWeight: "600" },
   nextBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 8, backgroundColor: COLORS.primary, borderRadius: 14, paddingVertical: 16,
+    gap: 8, backgroundColor: C.primary, borderRadius: 14, paddingVertical: 16,
   },
   nextBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
   submitBtn: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
-    gap: 8, backgroundColor: COLORS.primary, borderRadius: 14, paddingVertical: 16,
+    gap: 8, backgroundColor: C.primary, borderRadius: 14, paddingVertical: 16,
   },
   submitBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   btnDisabled: { opacity: 0.4 },
   // Modal
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "flex-end" },
   modalCard: {
-    backgroundColor: COLORS.bgCard, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    backgroundColor: C.bgCard, borderTopLeftRadius: 24, borderTopRightRadius: 24,
     maxHeight: "80%", paddingBottom: 24,
   },
   modalHeader: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    padding: 20, borderBottomWidth: 1, borderBottomColor: COLORS.bgCardBorder,
+    padding: 20, borderBottomWidth: 1, borderBottomColor: C.bgCardBorder,
   },
-  modalTitle: { color: COLORS.textPrimary, fontSize: 17, fontWeight: "700" },
+  modalTitle: { color: C.textPrimary, fontSize: 17, fontWeight: "700" },
   modalSearch: {
-    backgroundColor: "#0F172A", borderWidth: 1, borderColor: COLORS.bgCardBorder,
+    backgroundColor: C.bgInput, borderWidth: 1, borderColor: C.bgCardBorder,
     borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12,
-    color: COLORS.textPrimary, fontSize: 15, margin: 16,
+    color: C.textPrimary, fontSize: 15, margin: 16,
   },
   countryItem: {
     flexDirection: "row", alignItems: "center", gap: 12,
     paddingHorizontal: 20, paddingVertical: 12,
   },
-  countryItemActive: { backgroundColor: `${COLORS.primary}20` },
+  countryItemActive: { backgroundColor: `${C.primary}20` },
   countryFlag: { fontSize: 22, width: 32 },
-  countryName: { flex: 1, color: COLORS.textPrimary, fontSize: 15 },
+  countryName: { flex: 1, color: C.textPrimary, fontSize: 15 },
 });
