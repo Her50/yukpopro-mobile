@@ -370,60 +370,91 @@ export const abonnementApi = {
   },
 };
 
-export interface VisuelMarketingSpec {
-  visual_type: string;
-  format: string;
-  theme: string;
-  title: string;
-  subtitle?: string;
+// ── Infographie Pro (Bureau partagé YukpoSecrétariat) ───────────────────────
+
+export interface GabaritInfographie {
+  cle: string;
+  libelle: string;
+  categorie: string;
+  width_mm: number;
+  height_mm: number;
+  bleed_mm: number;
+  prix_fcfa: number;
   description?: string;
-  brand_name?: string;
-  brand_color?: string;
-  badge?: string;
-  contact?: string;
-  date?: string;
-  time?: string;
-  location?: string;
-  price?: string;
-  organizer?: string;
-  bullets?: string[];
-  hashtags?: string[];
-  output_format?: string;
-  sauvegarder?: boolean;
-  titre_document?: string;
 }
 
-export interface VisuelSummary {
-  id: number;
+export interface SpecificationInfographieData {
+  type_gabarit: string;
   titre: string;
-  visual_type: string;
-  format: string;
-  theme: string;
-  dimensions: string;
-  image_preview: string;
-  cree_le: string;
+  sous_titre?: string;
+  corps?: string;
+  details: string[];
+  palette?: string;
+  nom_organisation?: string;
+  contact?: string;
+  slogan?: string;
+  date_evenement?: string;
+  lieu?: string;
 }
 
-export const marketingApi = {
-  genererVisuel: async (spec: VisuelMarketingSpec): Promise<{
-    image_base64: string;
-    format_mime: string;
-    dimensions: { w: number; h: number };
-    doc_id: number | null;
-    sauvegarde: boolean;
-  }> => {
-    const { data } = await http.post("/pro/marketing/visuel/generer", spec, { timeout: 60_000 });
+export interface ResultatInfographieReponse {
+  pdf_id?: string;
+  png_id?: string;
+  pdf_base64?: string;
+  png_base64?: string;
+  prix_gabarit_fcfa: number;
+  credits_debites?: number;
+  specification: SpecificationInfographieData;
+  width_mm: number;
+  height_mm: number;
+}
+
+export const infographieApi = {
+  listerGabarits: async (): Promise<{ gabarits: GabaritInfographie[]; palettes: string[] }> => {
+    const { data } = await http.get("/bureau/infographie/gabarits");
     return data;
   },
 
-  listerVisuels: async (): Promise<{ visuels: VisuelSummary[] }> => {
-    const { data } = await http.get("/pro/marketing/visuels");
+  genererDepuisBrief: async (payload: {
+    brief: string; type_gabarit: string; pays?: string;
+  }): Promise<ResultatInfographieReponse> => {
+    const { data } = await http.post("/bureau/infographie/generer", payload, { timeout: 120_000 });
     return data;
   },
 
-  supprimerVisuel: async (id: number): Promise<void> => {
-    await http.delete(`/pro/marketing/visuels/${id}`);
+  genererManuel: async (payload: SpecificationInfographieData): Promise<ResultatInfographieReponse> => {
+    const { data } = await http.post("/bureau/infographie/generer-manuel", payload, { timeout: 120_000 });
+    return data;
   },
+
+  genererDepuisModele: async (payload: {
+    modele: { uri: string; name: string; type: string };
+    brief: string;
+    type_gabarit: string;
+    pays?: string;
+  }): Promise<ResultatInfographieReponse> => {
+    const form = new FormData();
+    // @ts-ignore — React Native FormData
+    form.append("modele", { uri: payload.modele.uri, name: payload.modele.name, type: payload.modele.type });
+    form.append("brief", payload.brief);
+    form.append("type_gabarit", payload.type_gabarit);
+    if (payload.pays) form.append("pays", payload.pays);
+    const { data } = await http.post("/bureau/infographie/generer-depuis-modele", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 180_000,
+    });
+    return data;
+  },
+
+  genererCustom: async (payload: {
+    width_mm: number; height_mm: number; bleed_mm?: number; brief: string; pays?: string;
+  }): Promise<ResultatInfographieReponse> => {
+    const { data } = await http.post("/bureau/infographie/generer-custom", payload, { timeout: 120_000 });
+    return data;
+  },
+
+  urlTelechargement: (fichier_id: string) =>
+    `${BASE_URL}/bureau/infographie/fichier/${encodeURIComponent(fichier_id)}`,
 };
 
 // ── Enquêtes & Études qualitatives/quantitatives ─────────────────────────────
@@ -476,21 +507,72 @@ export const enquetesApi = {
     return data as { n_themes: number; graphiques: string[]; saturation: boolean };
   },
 
-  genererRapport: async (etudeId: string, format = "json") => {
+  genererRapport: async (etudeId: string, format = "docx") => {
     const { data } = await http.post(`/enquetes/${etudeId}/rapport`, null, {
       params: { format_rapport: format },
-      timeout: 180_000,
+      timeout: 240_000,
     });
     return data as {
       rapport_texte: string;
       themes: Array<{ code: string; libelle: string; frequence: number; citations: string[]; sentiment: string }>;
       n_themes: number;
       n_entretiens: number;
+      fichier_id?: string;
+      sauvegarde_mes_documents?: boolean;
     };
   },
 
   getRapport: async (etudeId: string) => {
     const { data } = await http.get(`/enquetes/${etudeId}/rapport`);
+    return data;
+  },
+
+  uploadProtocole: async (
+    etudeId: string,
+    file: { uri: string; name: string; type: string },
+    params: { titre: string; objectif?: string; population?: string; n_questions?: number },
+  ) => {
+    const form = new FormData();
+    // @ts-ignore — React Native FormData
+    form.append("fichier", { uri: file.uri, name: file.name, type: file.type });
+    form.append("etude_id", etudeId);
+    form.append("titre", params.titre);
+    if (params.objectif) form.append("objectif", params.objectif);
+    if (params.population) form.append("population", params.population);
+    form.append("n_questions", String(params.n_questions ?? 20));
+    const { data } = await http.post("/enquetes/upload-protocole", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 240_000,
+    });
+    return data as {
+      formulaire_id: string;
+      titre: string;
+      n_questions: number;
+      xlsform_fichier_id?: string;
+      sauvegarde_mes_documents?: boolean;
+    };
+  },
+
+  genererFormulaireIa: async (payload: {
+    titre: string; description: string; objectif?: string;
+    population?: string; n_questions?: number; creer_dans_etude?: string;
+  }) => {
+    const { data } = await http.post("/enquetes/generer-formulaire-ia", payload, { timeout: 180_000 });
+    return data;
+  },
+
+  analyserQuantitatif: async (etudeId: string) => {
+    const { data } = await http.post(`/enquetes/${etudeId}/analyser-quantitatif`);
+    return data;
+  },
+
+  analyserIntelligent: async (etudeId: string) => {
+    const { data } = await http.post(`/enquetes/${etudeId}/analyser-intelligent`);
+    return data;
+  },
+
+  analyserCommentaires: async (etudeId: string) => {
+    const { data } = await http.post(`/enquetes/${etudeId}/analyser-commentaires`);
     return data;
   },
 };

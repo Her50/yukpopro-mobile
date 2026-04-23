@@ -11,9 +11,11 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { COLORS } from "@/store";
-import { generateurApi, marketingApi, DocumentHistorique, VisuelSummary } from "@/api/client";
+import { useNavigation } from "@react-navigation/native";
+import { generateurApi, infographieApi, DocumentHistorique, GabaritInfographie, ResultatInfographieReponse } from "@/api/client";
 
-type TabType = "rapport" | "slides" | "traduction" | "fichiers" | "conversion" | "historique" | "modeles" | "marketing";
+type TabType = "rapport" | "slides" | "traduction" | "fichiers" | "conversion" | "historique" | "modeles" | "infographie";
+type InfogMode = "brief" | "manuel" | "modele" | "custom";
 
 interface Template {
   label: string;
@@ -167,41 +169,41 @@ export const GenerateursScreen = () => {
   const [historique, setHistorique]       = useState<DocumentHistorique[]>([]);
   const [histLoading, setHistLoading]     = useState(false);
 
-  // Marketing visuel
-  const [mktLoading, setMktLoading]       = useState(false);
-  const [mktImage, setMktImage]           = useState<string | null>(null);
-  const [mktTitle, setMktTitle]           = useState("");
-  const [mktSubtitle, setMktSubtitle]     = useState("");
-  const [mktDescription, setMktDescription] = useState("");
-  const [mktBrandName, setMktBrandName]   = useState("");
-  const [mktContact, setMktContact]       = useState("");
-  const [mktDate, setMktDate]             = useState("");
-  const [mktLocation, setMktLocation]     = useState("");
-  const [mktPrice, setMktPrice]           = useState("");
-  const [mktBadge, setMktBadge]           = useState("");
-  const [mktVisualType, setMktVisualType] = useState("poster");
-  const [mktFormat, setMktFormat]         = useState("portrait");
-  const [mktTheme, setMktTheme]           = useState("purple");
-  const [mktVisuels, setMktVisuels]       = useState<VisuelSummary[]>([]);
-  const [mktVisuelsLoading, setMktVisuelsLoading] = useState(false);
+  // Infographie Pro (Bureau partagé YukpoSecrétariat)
+  const navigation = useNavigation<any>();
+  const [infogMode, setInfogMode]         = useState<InfogMode>("brief");
+  const [infogGabarits, setInfogGabarits] = useState<GabaritInfographie[]>([]);
+  const [infogPalettes, setInfogPalettes] = useState<string[]>([]);
+  const [infogGabarit, setInfogGabarit]   = useState<string>("flyer_a5");
+  const [infogPays, setInfogPays]         = useState<string>("CM");
+  const [infogLoading, setInfogLoading]   = useState(false);
+  const [infogResult, setInfogResult]     = useState<ResultatInfographieReponse | null>(null);
+  // brief mode
+  const [infogBrief, setInfogBrief]       = useState("");
+  // manuel mode
+  const [infogTitre, setInfogTitre]         = useState("");
+  const [infogSousTitre, setInfogSousTitre] = useState("");
+  const [infogCorps, setInfogCorps]         = useState("");
+  const [infogDetails, setInfogDetails]     = useState("");
+  const [infogPalette, setInfogPalette]     = useState("classique");
+  const [infogOrg, setInfogOrg]             = useState("");
+  const [infogContact, setInfogContact]     = useState("");
+  const [infogSlogan, setInfogSlogan]       = useState("");
+  const [infogDate, setInfogDate]           = useState("");
+  const [infogLieu, setInfogLieu]           = useState("");
+  // modele mode
+  const [infogModele, setInfogModele]       = useState<{ uri: string; name: string; type: string } | null>(null);
+  // custom mode
+  const [infogW, setInfogW]                 = useState(105);
+  const [infogH, setInfogH]                 = useState(148);
+  const [infogBleed, setInfogBleed]         = useState(3);
 
-  const MKT_TYPES = [
-    { id: "poster", label: "Affiche/Poster" }, { id: "flyer", label: "Flyer" },
-    { id: "social_post", label: "Post Réseaux" }, { id: "banner", label: "Bannière" },
-    { id: "invitation", label: "Invitation" }, { id: "certificate", label: "Certificat" },
-    { id: "business_card", label: "Carte visite" },
-  ];
-  const MKT_FORMATS = [
-    { id: "portrait", label: "Portrait" }, { id: "square", label: "Carré" },
-    { id: "landscape", label: "Paysage" }, { id: "story", label: "Story" },
-    { id: "banner_wide", label: "Bannière large" }, { id: "a4", label: "A4" },
-  ];
-  const MKT_THEMES = [
-    { id: "purple", label: "Violet", color: "#7B1FE4" }, { id: "blue", label: "Bleu", color: "#0062FF" },
-    { id: "dark", label: "Dark", color: "#00DCFF" }, { id: "gold", label: "Or", color: "#FFD700" },
-    { id: "elegant", label: "Élégant", color: "#C3A564" }, { id: "green", label: "Vert", color: "#32E678" },
-    { id: "orange", label: "Orange", color: "#FFA014" }, { id: "red", label: "Rouge", color: "#FF503C" },
-    { id: "corporate", label: "Corporate", color: "#194190" },
+  const INFOG_PAYS = [
+    { id: "CM", label: "Cameroun" }, { id: "CI", label: "Côte d'Ivoire" }, { id: "SN", label: "Sénégal" },
+    { id: "TG", label: "Togo" }, { id: "BJ", label: "Bénin" }, { id: "BF", label: "Burkina Faso" },
+    { id: "GA", label: "Gabon" }, { id: "ML", label: "Mali" }, { id: "NE", label: "Niger" },
+    { id: "GN", label: "Guinée" }, { id: "CG", label: "Congo" }, { id: "CD", label: "RDC" },
+    { id: "TD", label: "Tchad" },
   ];
 
   // ── Auto-sauvegarde ─────────────────────────────────────────────────────────
@@ -504,52 +506,116 @@ export const GenerateursScreen = () => {
 
   // ── Tabs ─────────────────────────────────────────────────────────────────────
 
-  const chargerVisuels = useCallback(async () => {
-    setMktVisuelsLoading(true);
+  const chargerGabarits = useCallback(async () => {
     try {
-      const res = await marketingApi.listerVisuels();
-      setMktVisuels(res.visuels);
-    } catch { /* non bloquant */ } finally { setMktVisuelsLoading(false); }
+      const res = await infographieApi.listerGabarits();
+      setInfogGabarits(res.gabarits);
+      setInfogPalettes(res.palettes);
+    } catch { /* non bloquant */ }
   }, []);
 
-  useEffect(() => { if (tab === "marketing") chargerVisuels(); }, [tab]);
+  useEffect(() => { if (tab === "infographie" && infogGabarits.length === 0) chargerGabarits(); }, [tab]);
 
-  const genererVisuel = async () => {
-    if (!mktTitle.trim()) { Alert.alert("Titre requis", "Veuillez saisir un titre pour votre visuel."); return; }
-    setMktLoading(true); setMktImage(null);
+  const handleErreurCredits = (e: any) => {
+    const status = e?.response?.status;
+    const detail: string = e?.response?.data?.detail || "";
+    if (status === 402 && detail.startsWith("CREDITS_EPUISES")) {
+      const restants = /restants=(\d+)/.exec(detail)?.[1] ?? "0";
+      const plan     = /plan=([^|]+)/.exec(detail)?.[1] ?? "—";
+      Alert.alert(
+        "💳 Crédits insuffisants",
+        `Restants : ${restants} crédits (plan ${plan}). Rechargez vos crédits ou upgradez votre plan pour continuer.`,
+        [
+          { text: "Plus tard", style: "cancel" },
+          { text: "Recharger / Upgrader", onPress: () => navigation?.navigate?.("Abonnement") },
+        ],
+      );
+      return true;
+    }
+    if (status === 403 && detail.startsWith("MODULE_NON_AUTORISE")) {
+      Alert.alert(
+        "🔒 Module non inclus",
+        "Le module Infographie n'est pas inclus dans votre plan actuel. Passez à un plan supérieur pour y accéder.",
+        [
+          { text: "Plus tard", style: "cancel" },
+          { text: "Upgrader", onPress: () => navigation?.navigate?.("Abonnement") },
+        ],
+      );
+      return true;
+    }
+    return false;
+  };
+
+  const genererInfographie = async () => {
+    setInfogLoading(true); setInfogResult(null);
     try {
-      const res = await marketingApi.genererVisuel({
-        visual_type:  mktVisualType,
-        format:       mktFormat,
-        theme:        mktTheme,
-        title:        mktTitle,
-        subtitle:     mktSubtitle || undefined,
-        description:  mktDescription || undefined,
-        brand_name:   mktBrandName || undefined,
-        contact:      mktContact || undefined,
-        date:         mktDate || undefined,
-        location:     mktLocation || undefined,
-        price:        mktPrice || undefined,
-        badge:        mktBadge || undefined,
-        sauvegarder:  true,
-      });
-      setMktImage(res.image_base64);
-      chargerVisuels();
-      Alert.alert("✅ Visuel généré", res.sauvegarde ? "Sauvegardé dans Mes Documents." : "Génération réussie.");
+      let res: ResultatInfographieReponse;
+      if (infogMode === "brief") {
+        if (infogBrief.trim().length < 10) { Alert.alert("Brief trop court", "Décrivez votre besoin (min 10 caractères)"); setInfogLoading(false); return; }
+        res = await infographieApi.genererDepuisBrief({ brief: infogBrief, type_gabarit: infogGabarit, pays: infogPays });
+      } else if (infogMode === "manuel") {
+        if (!infogTitre.trim()) { Alert.alert("Titre requis", "Le titre est obligatoire en mode manuel"); setInfogLoading(false); return; }
+        res = await infographieApi.genererManuel({
+          type_gabarit: infogGabarit,
+          titre: infogTitre,
+          sous_titre: infogSousTitre || undefined,
+          corps: infogCorps || undefined,
+          details: infogDetails.split("\n").map(s => s.trim()).filter(Boolean),
+          palette: infogPalette,
+          nom_organisation: infogOrg || undefined,
+          contact: infogContact || undefined,
+          slogan: infogSlogan || undefined,
+          date_evenement: infogDate || undefined,
+          lieu: infogLieu || undefined,
+        });
+      } else if (infogMode === "modele") {
+        if (!infogModele) { Alert.alert("Modèle manquant", "Choisissez une image modèle à analyser"); setInfogLoading(false); return; }
+        if (infogBrief.trim().length < 10) { Alert.alert("Brief trop court", "Décrivez votre besoin (min 10 caractères)"); setInfogLoading(false); return; }
+        res = await infographieApi.genererDepuisModele({
+          modele: infogModele, brief: infogBrief, type_gabarit: infogGabarit, pays: infogPays,
+        });
+      } else {
+        if (infogBrief.trim().length < 10) { Alert.alert("Brief trop court", "Décrivez votre besoin (min 10 caractères)"); setInfogLoading(false); return; }
+        if (infogW <= 0 || infogH <= 0) { Alert.alert("Dimensions invalides", "Largeur et hauteur doivent être > 0"); setInfogLoading(false); return; }
+        res = await infographieApi.genererCustom({
+          width_mm: infogW, height_mm: infogH, bleed_mm: infogBleed, brief: infogBrief, pays: infogPays,
+        });
+      }
+      setInfogResult(res);
+      Alert.alert("✅ Infographie générée", `Crédits débités : ${res.credits_debites ?? res.prix_gabarit_fcfa}\nSauvegardée dans Mes Documents.`);
     } catch (e: any) {
-      Alert.alert("Erreur", e?.response?.data?.detail || "Erreur lors de la génération");
-    } finally { setMktLoading(false); }
+      if (!handleErreurCredits(e)) {
+        Alert.alert("Erreur", e?.response?.data?.detail || "Erreur lors de la génération");
+      }
+    } finally { setInfogLoading(false); }
+  };
+
+  const choisirModele = async () => {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: ["image/png", "image/jpeg"],
+        copyToCacheDirectory: true,
+      });
+      if (res.canceled) return;
+      const a = res.assets[0];
+      setInfogModele({ uri: a.uri, name: a.name, type: a.mimeType || "image/png" });
+    } catch { /* ignore */ }
   };
 
   const TABS: { key: TabType; label: string; icon: string }[] = [
-    { key: "rapport",     label: "Rapport",      icon: "document-text-outline" },
-    { key: "slides",      label: "Slides",       icon: "easel-outline" },
-    { key: "traduction",  label: "Traduction",   icon: "language-outline" },
-    { key: "conversion",  label: "Conversion",   icon: "repeat-outline" },
-    { key: "modeles",     label: "Modèles",      icon: "library-outline" },
-    { key: "historique",  label: "Historique",   icon: "folder-open-outline" },
-    { key: "marketing",   label: "Marketing",    icon: "color-palette-outline" },
+    { key: "rapport",      label: "Rapport",       icon: "document-text-outline" },
+    { key: "slides",       label: "Slides",        icon: "easel-outline" },
+    { key: "traduction",   label: "Traduction",    icon: "language-outline" },
+    { key: "conversion",   label: "Conversion",    icon: "repeat-outline" },
+    { key: "modeles",      label: "Modèles",       icon: "library-outline" },
+    { key: "historique",   label: "Historique",    icon: "folder-open-outline" },
+    { key: "infographie",  label: "Infographie",   icon: "color-palette-outline" },
   ];
+
+  const gabaritCourant = infogGabarits.find(g => g.cle === infogGabarit);
+  const gabaritsParCategorie = infogGabarits.reduce<Record<string, GabaritInfographie[]>>((acc, g) => {
+    (acc[g.categorie] ||= []).push(g); return acc;
+  }, {});
 
   // ── Render historique item ───────────────────────────────────────────────────
 
@@ -688,142 +754,213 @@ export const GenerateursScreen = () => {
             );
           })}
         </ScrollView>
-      ) : tab === "marketing" ? (
+      ) : tab === "infographie" ? (
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
-          {/* Type + Format */}
-          <Text style={styles.label}>Type de visuel</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              {MKT_TYPES.map(t => (
-                <TouchableOpacity key={t.id} onPress={() => setMktVisualType(t.id)}
-                  style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1,
-                    borderColor: mktVisualType === t.id ? COLORS.primary : COLORS.bgCardBorder,
-                    backgroundColor: mktVisualType === t.id ? `${COLORS.primary}25` : COLORS.bgCard }}>
-                  <Text style={{ color: mktVisualType === t.id ? COLORS.primary : COLORS.textMuted, fontSize: 12, fontWeight: "600" }}>{t.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-
-          <Text style={styles.label}>Format</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              {MKT_FORMATS.map(f => (
-                <TouchableOpacity key={f.id} onPress={() => setMktFormat(f.id)}
-                  style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1,
-                    borderColor: mktFormat === f.id ? COLORS.primary : COLORS.bgCardBorder,
-                    backgroundColor: mktFormat === f.id ? `${COLORS.primary}25` : COLORS.bgCard }}>
-                  <Text style={{ color: mktFormat === f.id ? COLORS.primary : COLORS.textMuted, fontSize: 12, fontWeight: "600" }}>{f.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-
-          <Text style={styles.label}>Thème</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              {MKT_THEMES.map(t => (
-                <TouchableOpacity key={t.id} onPress={() => setMktTheme(t.id)}
-                  style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1,
-                    borderColor: mktTheme === t.id ? t.color : COLORS.bgCardBorder,
-                    backgroundColor: mktTheme === t.id ? `${t.color}25` : COLORS.bgCard }}>
-                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: t.color }} />
-                  <Text style={{ color: mktTheme === t.id ? "#fff" : COLORS.textMuted, fontSize: 12, fontWeight: "600" }}>{t.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-
-          <Text style={styles.label}>Titre principal *</Text>
-          <TextInput value={mktTitle} onChangeText={setMktTitle} style={styles.input}
-            placeholder="Ex: Formation Marketing Digital — Douala 2025" placeholderTextColor={COLORS.textMuted} />
-
-          <Text style={styles.label}>Sous-titre / Accroche</Text>
-          <TextInput value={mktSubtitle} onChangeText={setMktSubtitle} style={styles.input}
-            placeholder="Slogan ou accroche marketing" placeholderTextColor={COLORS.textMuted} />
-
-          <Text style={styles.label}>Nom marque / Organisme</Text>
-          <TextInput value={mktBrandName} onChangeText={setMktBrandName} style={styles.input}
-            placeholder="Ex: Cabinet Excellence Consulting" placeholderTextColor={COLORS.textMuted} />
-
-          <Text style={styles.label}>Description</Text>
-          <TextInput value={mktDescription} onChangeText={setMktDescription} style={[styles.input, styles.textarea]}
-            multiline placeholder="Texte de présentation de l'événement ou du produit…" placeholderTextColor={COLORS.textMuted} />
-
-          <View style={{ flexDirection: "row", gap: 12 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Date</Text>
-              <TextInput value={mktDate} onChangeText={setMktDate} style={styles.input}
-                placeholder="15 Juin 2025" placeholderTextColor={COLORS.textMuted} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Lieu</Text>
-              <TextInput value={mktLocation} onChangeText={setMktLocation} style={styles.input}
-                placeholder="Yaoundé, Cameroun" placeholderTextColor={COLORS.textMuted} />
-            </View>
+          {/* Mode selector */}
+          <Text style={styles.label}>Mode de création</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+            {([
+              { id: "brief",  label: "Brief IA",       icon: "sparkles-outline" },
+              { id: "manuel", label: "Spec manuelle",  icon: "create-outline" },
+              { id: "modele", label: "Depuis modèle",  icon: "image-outline" },
+              { id: "custom", label: "Format custom",  icon: "resize-outline" },
+            ] as const).map(m => (
+              <TouchableOpacity key={m.id} onPress={() => setInfogMode(m.id as InfogMode)}
+                style={{ flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, borderWidth: 1,
+                  borderColor: infogMode === m.id ? "#A78BFA" : COLORS.bgCardBorder,
+                  backgroundColor: infogMode === m.id ? "rgba(167,139,250,0.18)" : COLORS.bgCard }}>
+                <Ionicons name={m.icon as any} size={14} color={infogMode === m.id ? "#A78BFA" : COLORS.textMuted} />
+                <Text style={{ color: infogMode === m.id ? "#A78BFA" : COLORS.textMuted, fontSize: 12, fontWeight: "600" }}>{m.label}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
-          <View style={{ flexDirection: "row", gap: 12 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Tarif / Prix</Text>
-              <TextInput value={mktPrice} onChangeText={setMktPrice} style={styles.input}
-                placeholder="50 000 FCFA" placeholderTextColor={COLORS.textMuted} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Badge</Text>
-              <TextInput value={mktBadge} onChangeText={setMktBadge} style={styles.input}
-                placeholder="GRATUIT · VIP" placeholderTextColor={COLORS.textMuted} />
-            </View>
-          </View>
-
-          <Text style={styles.label}>Contact / Lien</Text>
-          <TextInput value={mktContact} onChangeText={setMktContact} style={styles.input}
-            placeholder="+237 6XX XXX XXX | www.exemple.cm" placeholderTextColor={COLORS.textMuted} />
-
-          <TouchableOpacity onPress={genererVisuel} disabled={mktLoading || !mktTitle.trim()}
-            style={{ marginTop: 16, paddingVertical: 14, borderRadius: 14, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8,
-              backgroundColor: mktLoading || !mktTitle.trim() ? COLORS.bgCard : "#7B3FE4", opacity: mktLoading ? 0.7 : 1 }}>
-            {mktLoading
-              ? <><ActivityIndicator size="small" color="#fff" /><Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Yukpo Pro génère le visuel…</Text></>
-              : <><Ionicons name="color-palette-outline" size={18} color="#fff" /><Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Générer le visuel</Text></>}
-          </TouchableOpacity>
-
-          {/* Aperçu */}
-          {mktImage && (
-            <View style={{ marginTop: 20, backgroundColor: COLORS.bgCard, borderRadius: 16, padding: 12, borderWidth: 1, borderColor: COLORS.bgCardBorder }}>
-              <Text style={[styles.label, { marginBottom: 8, color: "#A78BFA" }]}>Aperçu du visuel</Text>
-              <View style={{ aspectRatio: 0.8, borderRadius: 12, overflow: "hidden", backgroundColor: "#0D1117" }}>
-                <Text style={{ color: COLORS.textMuted, textAlign: "center", marginTop: 20, fontSize: 12 }}>
-                  Visuel généré — téléchargez depuis Mes Documents → Visuels Marketing
-                </Text>
-              </View>
-              <Text style={{ color: COLORS.textSecondary, fontSize: 11, textAlign: "center", marginTop: 8 }}>
-                Sauvegardé dans Mes Documents
-              </Text>
-            </View>
+          {/* Gabarit selector (sauf custom) */}
+          {infogMode !== "custom" && (
+            <>
+              <Text style={styles.label}>Gabarit {gabaritCourant && <Text style={{ color: "#A78BFA" }}>· {gabaritCourant.prix_fcfa.toLocaleString("fr-FR")} FCFA = {gabaritCourant.prix_fcfa} crédits</Text>}</Text>
+              <ScrollView style={{ maxHeight: 180, borderRadius: 12, borderWidth: 1, borderColor: COLORS.bgCardBorder, marginBottom: 12 }}>
+                {Object.entries(gabaritsParCategorie).map(([cat, items]) => (
+                  <View key={cat}>
+                    <Text style={{ color: COLORS.textMuted, fontSize: 11, fontWeight: "700", paddingHorizontal: 10, paddingVertical: 6, backgroundColor: COLORS.bgCard, textTransform: "uppercase" }}>{cat}</Text>
+                    {items.map(g => (
+                      <TouchableOpacity key={g.cle} onPress={() => setInfogGabarit(g.cle)}
+                        style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 10, paddingVertical: 8,
+                          backgroundColor: infogGabarit === g.cle ? "rgba(167,139,250,0.15)" : "transparent" }}>
+                        <Text style={{ color: infogGabarit === g.cle ? "#A78BFA" : COLORS.textPrimary, fontSize: 13, flex: 1 }}>{g.libelle}</Text>
+                        <Text style={{ color: COLORS.textMuted, fontSize: 11 }}>{g.prix_fcfa.toLocaleString("fr-FR")} FCFA</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                ))}
+              </ScrollView>
+            </>
           )}
 
-          {/* Visuels sauvegardés */}
-          <Text style={[styles.label, { marginTop: 24 }]}>Visuels sauvegardés ({mktVisuels.length})</Text>
-          {mktVisuelsLoading
-            ? <ActivityIndicator color={COLORS.primary} style={{ marginTop: 16 }} />
-            : mktVisuels.length === 0
-              ? <Text style={{ color: COLORS.textMuted, fontSize: 13, textAlign: "center", marginTop: 8 }}>Aucun visuel sauvegardé</Text>
-              : mktVisuels.map(v => (
-                <View key={v.id} style={{ backgroundColor: COLORS.bgCard, borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: COLORS.bgCardBorder }}>
-                  <Text style={{ color: COLORS.textPrimary, fontWeight: "600", fontSize: 13 }}>{v.titre}</Text>
-                  <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
-                    <Text style={{ color: "#A78BFA", fontSize: 11, backgroundColor: "rgba(167,139,250,0.15)", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>{v.visual_type}</Text>
-                    <Text style={{ color: COLORS.textMuted, fontSize: 11 }}>{v.dimensions}</Text>
-                  </View>
-                  <Text style={{ color: COLORS.textMuted, fontSize: 11, marginTop: 4 }}>{new Date(v.cree_le).toLocaleDateString("fr-FR")}</Text>
-                  <TouchableOpacity onPress={async () => { try { await marketingApi.supprimerVisuel(v.id); chargerVisuels(); } catch {} }}
-                    style={{ marginTop: 8, alignSelf: "flex-end" }}>
-                    <Ionicons name="trash-outline" size={18} color={COLORS.textMuted} />
-                  </TouchableOpacity>
+          {/* Pays (sauf manuel) */}
+          {infogMode !== "manuel" && (
+            <>
+              <Text style={styles.label}>Pays cible</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                <View style={{ flexDirection: "row", gap: 6 }}>
+                  {INFOG_PAYS.map(p => (
+                    <TouchableOpacity key={p.id} onPress={() => setInfogPays(p.id)}
+                      style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1,
+                        borderColor: infogPays === p.id ? "#A78BFA" : COLORS.bgCardBorder,
+                        backgroundColor: infogPays === p.id ? "rgba(167,139,250,0.18)" : COLORS.bgCard }}>
+                      <Text style={{ color: infogPays === p.id ? "#A78BFA" : COLORS.textMuted, fontSize: 11 }}>{p.label}</Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
-              ))
-          }
+              </ScrollView>
+            </>
+          )}
+
+          {/* Mode brief */}
+          {infogMode === "brief" && (
+            <>
+              <Text style={styles.label}>Brief / Description du besoin *</Text>
+              <TextInput value={infogBrief} onChangeText={setInfogBrief} style={[styles.input, styles.textarea]}
+                multiline numberOfLines={5} placeholder="Ex: Flyer pour formation marketing digital à Douala le 15 mars 2026, public PME, prix 50 000 FCFA, contact +237 6XX XX XX XX"
+                placeholderTextColor={COLORS.textMuted} />
+            </>
+          )}
+
+          {/* Mode manuel */}
+          {infogMode === "manuel" && (
+            <>
+              <Text style={styles.label}>Titre *</Text>
+              <TextInput value={infogTitre} onChangeText={setInfogTitre} style={styles.input} placeholder="Ex: Formation Marketing Digital" placeholderTextColor={COLORS.textMuted} />
+              <Text style={styles.label}>Sous-titre</Text>
+              <TextInput value={infogSousTitre} onChangeText={setInfogSousTitre} style={styles.input} placeholder="Accroche secondaire" placeholderTextColor={COLORS.textMuted} />
+              <Text style={styles.label}>Corps / Description</Text>
+              <TextInput value={infogCorps} onChangeText={setInfogCorps} style={[styles.input, styles.textarea]} multiline placeholder="Texte principal du visuel" placeholderTextColor={COLORS.textMuted} />
+              <Text style={styles.label}>Détails (un par ligne)</Text>
+              <TextInput value={infogDetails} onChangeText={setInfogDetails} style={[styles.input, styles.textarea]} multiline placeholder={"Date · 15 mars 2026\nLieu · Hôtel Hilton, Douala\nPrix · 50 000 FCFA"} placeholderTextColor={COLORS.textMuted} />
+              <Text style={styles.label}>Palette</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+                <View style={{ flexDirection: "row", gap: 6 }}>
+                  {(infogPalettes.length ? infogPalettes : ["classique", "cameroun", "senegal", "elegance", "moderne"]).map(p => (
+                    <TouchableOpacity key={p} onPress={() => setInfogPalette(p)}
+                      style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1,
+                        borderColor: infogPalette === p ? "#A78BFA" : COLORS.bgCardBorder,
+                        backgroundColor: infogPalette === p ? "rgba(167,139,250,0.18)" : COLORS.bgCard }}>
+                      <Text style={{ color: infogPalette === p ? "#A78BFA" : COLORS.textMuted, fontSize: 11 }}>{p}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Organisation</Text>
+                  <TextInput value={infogOrg} onChangeText={setInfogOrg} style={styles.input} placeholder="Cabinet …" placeholderTextColor={COLORS.textMuted} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Contact</Text>
+                  <TextInput value={infogContact} onChangeText={setInfogContact} style={styles.input} placeholder="+237 6XX…" placeholderTextColor={COLORS.textMuted} />
+                </View>
+              </View>
+              <Text style={styles.label}>Slogan</Text>
+              <TextInput value={infogSlogan} onChangeText={setInfogSlogan} style={styles.input} placeholder="Phrase d'accroche" placeholderTextColor={COLORS.textMuted} />
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Date</Text>
+                  <TextInput value={infogDate} onChangeText={setInfogDate} style={styles.input} placeholder="15 mars 2026" placeholderTextColor={COLORS.textMuted} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Lieu</Text>
+                  <TextInput value={infogLieu} onChangeText={setInfogLieu} style={styles.input} placeholder="Hôtel Hilton, Douala" placeholderTextColor={COLORS.textMuted} />
+                </View>
+              </View>
+            </>
+          )}
+
+          {/* Mode modèle */}
+          {infogMode === "modele" && (
+            <>
+              <Text style={styles.label}>Image modèle (PNG/JPG) *</Text>
+              <TouchableOpacity onPress={choisirModele}
+                style={{ borderWidth: 1, borderStyle: "dashed", borderColor: COLORS.bgCardBorder, borderRadius: 12, padding: 16, alignItems: "center", marginBottom: 12 }}>
+                <Ionicons name="cloud-upload-outline" size={32} color={COLORS.textMuted} />
+                <Text style={{ color: infogModele ? "#A78BFA" : COLORS.textMuted, fontSize: 12, marginTop: 6 }}>
+                  {infogModele ? infogModele.name : "Choisir une image à analyser"}
+                </Text>
+              </TouchableOpacity>
+              <Text style={styles.label}>Brief d'adaptation *</Text>
+              <TextInput value={infogBrief} onChangeText={setInfogBrief} style={[styles.input, styles.textarea]}
+                multiline numberOfLines={4} placeholder="Adapte ce visuel pour ma formation X, garde le style mais change …"
+                placeholderTextColor={COLORS.textMuted} />
+            </>
+          )}
+
+          {/* Mode custom */}
+          {infogMode === "custom" && (
+            <>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Largeur (mm) *</Text>
+                  <TextInput value={String(infogW)} onChangeText={(v) => setInfogW(Number(v) || 0)} keyboardType="numeric" style={styles.input} placeholderTextColor={COLORS.textMuted} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Hauteur (mm) *</Text>
+                  <TextInput value={String(infogH)} onChangeText={(v) => setInfogH(Number(v) || 0)} keyboardType="numeric" style={styles.input} placeholderTextColor={COLORS.textMuted} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>Bleed (mm)</Text>
+                  <TextInput value={String(infogBleed)} onChangeText={(v) => setInfogBleed(Number(v) || 0)} keyboardType="numeric" style={styles.input} placeholderTextColor={COLORS.textMuted} />
+                </View>
+              </View>
+              <Text style={styles.label}>Brief *</Text>
+              <TextInput value={infogBrief} onChangeText={setInfogBrief} style={[styles.input, styles.textarea]}
+                multiline numberOfLines={4} placeholder="Décrivez le visuel souhaité"
+                placeholderTextColor={COLORS.textMuted} />
+            </>
+          )}
+
+          {/* Bouton générer */}
+          <TouchableOpacity onPress={genererInfographie} disabled={infogLoading}
+            style={{ marginTop: 16, paddingVertical: 14, borderRadius: 14, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8,
+              backgroundColor: infogLoading ? COLORS.bgCard : "#7B3FE4", opacity: infogLoading ? 0.7 : 1 }}>
+            {infogLoading
+              ? <><ActivityIndicator size="small" color="#fff" /><Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Génération en cours…</Text></>
+              : <><Ionicons name="color-palette-outline" size={18} color="#fff" /><Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Générer l'infographie</Text></>}
+          </TouchableOpacity>
+
+          {/* Résultat */}
+          {infogResult && (
+            <View style={{ marginTop: 20, backgroundColor: COLORS.bgCard, borderRadius: 16, padding: 12, borderWidth: 1, borderColor: COLORS.bgCardBorder }}>
+              <Text style={[styles.label, { marginBottom: 8, color: "#A78BFA" }]}>Aperçu (PNG haute qualité)</Text>
+              {infogResult.png_base64 ? (
+                <View style={{ aspectRatio: infogResult.width_mm / infogResult.height_mm, borderRadius: 12, overflow: "hidden", backgroundColor: "#0D1117", marginBottom: 8 }}>
+                  {/* eslint-disable-next-line @typescript-eslint/no-var-requires */}
+                  <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+                    <Text style={{ color: COLORS.textMuted, fontSize: 11, padding: 12, textAlign: "center" }}>
+                      Aperçu disponible · ouvrez le PNG depuis Mes Documents
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
+              <Text style={{ color: COLORS.textSecondary, fontSize: 11, textAlign: "center", marginBottom: 8 }}>
+                💳 {infogResult.credits_debites ?? infogResult.prix_gabarit_fcfa} crédits débités · {infogResult.width_mm}×{infogResult.height_mm} mm
+              </Text>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                {infogResult.pdf_id && (
+                  <TouchableOpacity onPress={() => Linking.openURL(infographieApi.urlTelechargement(infogResult.pdf_id!))}
+                    style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", backgroundColor: COLORS.primary, flexDirection: "row", justifyContent: "center", gap: 6 }}>
+                    <Ionicons name="document-outline" size={14} color="#fff" />
+                    <Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>PDF print-ready</Text>
+                  </TouchableOpacity>
+                )}
+                {infogResult.png_id && (
+                  <TouchableOpacity onPress={() => Linking.openURL(infographieApi.urlTelechargement(infogResult.png_id!))}
+                    style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", backgroundColor: COLORS.bgCardBorder, flexDirection: "row", justifyContent: "center", gap: 6 }}>
+                    <Ionicons name="image-outline" size={14} color="#fff" />
+                    <Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>PNG aperçu</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          )}
         </ScrollView>
       ) : tab === "historique" ? (
         <FlatList
