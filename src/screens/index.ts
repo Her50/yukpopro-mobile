@@ -15,3 +15,4 @@ export { EnquetesScreen }      from "./EnquetesScreen";
 export { TraductionScreen }    from "./TraductionScreen";
 export { DocumentsScreen }     from "./DocumentsScreen";
 export { AdminScreen }         from "./AdminScreen";
+export { AdminPaiementsScreen } from "./AdminPaiementsScreen";

@@ -78,6 +78,7 @@ export const AbonnementScreen = () => {
   const [instructions, setInstructions] = useState<any>(null);
   const [reference, setReference] = useState("");
   const [transactionId, setTransactionId] = useState("");
+  const [numeroExpediteur, setNumeroExpediteur] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
   const [modeRecharge, setModeRecharge]   = useState(false);
@@ -109,7 +110,10 @@ export const AbonnementScreen = () => {
     if (!refR) { Alert.alert("Erreur", "Référence manquante"); return; }
     setLoadingR(true);
     try {
-      await abonnementApi.confirmerRecharge(refR, txIdR || undefined);
+      if (!telephoneR || telephoneR.length < 8) {
+        Alert.alert("Obligatoire", "Numéro MoMo expéditeur requis"); setLoadingR(false); return;
+      }
+      await abonnementApi.confirmerRecharge(refR, telephoneR, txIdR || undefined);
       setEtapeR("succes");
       const a = await abonnementApi.monAbonnement();
       setAbonnement(a);
@@ -150,9 +154,12 @@ export const AbonnementScreen = () => {
 
   const handleConfirmer = async () => {
     if (!reference) { Alert.alert("Erreur", "Référence manquante"); return; }
+    if (!numeroExpediteur || numeroExpediteur.length < 8) {
+      Alert.alert("Obligatoire", "Saisissez le numéro MoMo utilisé pour le paiement"); return;
+    }
     setActionLoading(true);
     try {
-      await abonnementApi.confirmerPaiement(reference, transactionId || undefined);
+      await abonnementApi.confirmerPaiement(reference, numeroExpediteur, transactionId || undefined);
       setEtape("succes");
       const a = await abonnementApi.monAbonnement();
       setAbonnement(a);
@@ -298,11 +305,14 @@ export const AbonnementScreen = () => {
 
           {etapeR === "confirmation" && (
             <>
-              <TextInput placeholder="YKP-RC-XXXXXXXX" value={refR} onChangeText={(t) => setRefR(t.toUpperCase())}
+              <TextInput placeholder="YYMMDD-NNN-XXXX" value={refR} onChangeText={(t) => setRefR(t.toUpperCase())}
                 style={styles.input} placeholderTextColor={C.textMuted} autoCapitalize="characters" />
+              <TextInput placeholder="N° MoMo expéditeur (obligatoire)" value={telephoneR} onChangeText={(t) => setTelephoneR(t.replace(/\D/g, ""))}
+                style={[styles.input, { marginTop: 8 }]} placeholderTextColor={C.textMuted} keyboardType="phone-pad" />
               <TextInput placeholder="ID Transaction (optionnel)" value={txIdR} onChangeText={setTxIdR}
                 style={[styles.input, { marginTop: 8 }]} placeholderTextColor={C.textMuted} />
-              <TouchableOpacity style={[styles.btnPrimary, !refR && styles.btnDisabled]} disabled={!refR || loadingR} onPress={handleConfirmerRecharge}>
+              <Text style={{ color: "#fbbf24", fontSize: 11, marginTop: 8 }}>⚠️ Activation provisoire — vérifiée sous 3h. Annulation auto si non reçu.</Text>
+              <TouchableOpacity style={[styles.btnPrimary, (!refR || !telephoneR) && styles.btnDisabled]} disabled={!refR || !telephoneR || loadingR} onPress={handleConfirmerRecharge}>
                 {loadingR ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.btnPrimaryText}>Confirmer la recharge</Text>}
               </TouchableOpacity>
             </>
@@ -470,11 +480,21 @@ export const AbonnementScreen = () => {
           <Text style={styles.fieldLabel}>Référence de paiement *</Text>
           <TextInput
             style={[styles.input, styles.monoInput]}
-            placeholder="YKP-XXXXXXXX"
+            placeholder="YYMMDD-NNN-XXXX"
             placeholderTextColor={C.textMuted}
             value={reference}
             onChangeText={(t) => setReference(t.toUpperCase())}
             autoCapitalize="characters"
+          />
+
+          <Text style={styles.fieldLabel}>Numéro MoMo utilisé pour le paiement *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="6XXXXXXXX (obligatoire)"
+            placeholderTextColor={C.textMuted}
+            value={numeroExpediteur}
+            onChangeText={(t) => setNumeroExpediteur(t.replace(/\D/g, ""))}
+            keyboardType="phone-pad"
           />
 
           <Text style={styles.fieldLabel}>ID Transaction Mobile Money (optionnel)</Text>
@@ -485,6 +505,12 @@ export const AbonnementScreen = () => {
             value={transactionId}
             onChangeText={setTransactionId}
           />
+
+          <View style={{ backgroundColor: "rgba(251,191,36,0.1)", borderWidth: 1, borderColor: "rgba(251,191,36,0.3)", borderRadius: 12, padding: 10, marginTop: 8 }}>
+            <Text style={{ color: "#fbbf24", fontSize: 11, lineHeight: 16 }}>
+              ⚠️ Activation provisoire. Votre abonnement sera vérifié sous 3h. Si le paiement n'est pas reçu, il sera automatiquement annulé. Le paiement direct intégré arrive bientôt.
+            </Text>
+          </View>
 
           <View style={styles.actionRow}>
             <TouchableOpacity style={styles.backBtn} onPress={() => setEtape("instructions")}>

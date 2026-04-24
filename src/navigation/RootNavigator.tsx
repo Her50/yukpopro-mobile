@@ -16,7 +16,7 @@ import { TranslateLiveScreen } from "@/screens/TranslateLiveScreen";
 import { GenerateursScreen } from "@/screens/GenerateursScreen";
 import { ProfilScreen } from "@/screens/ProfilScreen";
 import { AbonnementScreen } from "@/screens/AbonnementScreen";
-import { EmploiScreen, MarchesScreen, EnquetesScreen, TraductionScreen, DocumentsScreen, AdminScreen } from "@/screens";
+import { EmploiScreen, MarchesScreen, EnquetesScreen, TraductionScreen, DocumentsScreen, AdminScreen, AdminPaiementsScreen } from "@/screens";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -94,6 +94,7 @@ export const RootNavigator = () => {
             <Stack.Screen name="Traduction"  component={TraductionScreen} options={{ headerShown: true, title: "Traduction" }} />
             <Stack.Screen name="Documents"   component={DocumentsScreen}  options={{ headerShown: true, title: "Mes Documents" }} />
             <Stack.Screen name="Admin"       component={AdminScreen}      options={{ headerShown: true, title: "Admin" }} />
+            <Stack.Screen name="AdminPaiements" component={AdminPaiementsScreen} options={{ headerShown: true, title: "Paiements MoMo" }} />
           </>
         )}
       </Stack.Navigator>

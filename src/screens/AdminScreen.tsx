@@ -3,7 +3,8 @@
  * Charge /pro/admin/synthese si dispo, sinon affiche placeholders.
  */
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors, type Colors } from "@/store";
 import http from "@/api/client";
@@ -20,6 +21,7 @@ type Synthese = {
 
 export const AdminScreen = () => {
   const C = useColors();
+  const navigation = useNavigation<any>();
   const styles = useMemo(() => makeStyles(C), [C]);
   const [data, setData]   = useState<Synthese | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,6 +71,14 @@ export const AdminScreen = () => {
       <KPI icon="flash-outline"      label="Crédits consommés (mois)" value={data?.consommation_credits_mois ?? "—"} />
       <KPI icon="trending-up-outline" label="Signups 7 jours"     value={data?.signups_7j ?? "—"} />
       <KPI icon="card-outline"       label="Abonnements actifs"   value={data?.abonnements_actifs ?? "—"} />
+
+      <TouchableOpacity
+        style={{ marginTop: 20, padding: 14, borderRadius: 12, backgroundColor: C.primary, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }}
+        onPress={() => navigation.navigate("AdminPaiements")}
+      >
+        <Ionicons name="wallet-outline" size={18} color="#fff" />
+        <Text style={{ color: "#fff", fontWeight: "700" }}>Gérer les paiements MoMo</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 };
