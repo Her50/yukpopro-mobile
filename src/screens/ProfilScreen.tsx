@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,26 +6,168 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  FlatList,
   ActivityIndicator,
   Alert,
+  Modal,
+  Pressable,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system";
+import * as SecureStore from "expo-secure-store";
+import { useTranslation } from "react-i18next";
 import { useColors, type Colors, useAuthStore, useProfilStore, useThemeStore } from "@/store";
 import { profilApi, authApi } from "@/api/client";
 
+// Combobox modal avec recherche pour listes longues
+const ComboField = ({
+  label, value, onChange, options, placeholder, C,
+}: {
+  label: string; value: string; onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string; C: Colors;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const selectedLabel = options.find((o) => o.value === value)?.label ?? "";
+  const filtered = options.filter((o) =>
+    o.label.toLowerCase().includes(search.toLowerCase())
+  );
+  return (
+    <>
+      <Text style={{ color: C.textSecondary, fontSize: 13, fontWeight: "600", marginBottom: 8, marginTop: 12 }}>
+        {label}
+      </Text>
+      <TouchableOpacity
+        style={{
+          flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+          backgroundColor: C.bgInput, borderWidth: 1, borderColor: C.bgCardBorder,
+          borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12,
+        }}
+        onPress={() => { setOpen(true); setSearch(""); }}
+        activeOpacity={0.8}
+      >
+        <Text style={{ color: value ? C.textPrimary : C.textMuted, fontSize: 15, flex: 1 }}>
+          {selectedLabel || placeholder || "— Sélectionner —"}
+        </Text>
+        <Ionicons name="chevron-down" size={16} color={C.textMuted} />
+      </TouchableOpacity>
+
+      <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }} onPress={() => setOpen(false)}>
+          <View style={{ flex: 1 }} />
+          <Pressable
+            style={{
+              backgroundColor: C.bgCard, borderTopLeftRadius: 20, borderTopRightRadius: 20,
+              paddingBottom: 32, maxHeight: "70%",
+            }}
+            onPress={() => {}}
+          >
+            <View style={{
+              flexDirection: "row", alignItems: "center", gap: 10,
+              margin: 16, paddingHorizontal: 12, paddingVertical: 10,
+              backgroundColor: C.bgInput, borderRadius: 12,
+              borderWidth: 1, borderColor: C.bgCardBorder,
+            }}>
+              <Ionicons name="search-outline" size={16} color={C.textMuted} />
+              <TextInput
+                autoFocus
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Rechercher…"
+                placeholderTextColor={C.textMuted}
+                style={{ flex: 1, color: C.textPrimary, fontSize: 15 }}
+              />
+            </View>
+            <FlatList
+              data={filtered}
+              keyExtractor={(item) => item.value}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={{
+                    paddingHorizontal: 20, paddingVertical: 14,
+                    backgroundColor: item.value === value ? `${C.primary}20` : "transparent",
+                    borderBottomWidth: 1, borderBottomColor: C.bgCardBorder,
+                  }}
+                  onPress={() => { onChange(item.value); setOpen(false); setSearch(""); }}
+                >
+                  <Text style={{ color: item.value === value ? C.primary : C.textPrimary, fontSize: 15 }}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              ListEmptyComponent={
+                <Text style={{ color: C.textMuted, textAlign: "center", padding: 20, fontStyle: "italic" }}>
+                  Aucun résultat
+                </Text>
+              }
+            />
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
+  );
+};
+
+
 const METIERS = [
-  { value: "expert_comptable", label: "Expert Comptable" },
-  { value: "juriste", label: "Juriste / Avocat" },
-  { value: "fiscal", label: "Fiscaliste" },
-  { value: "auditeur", label: "Auditeur" },
-  { value: "conseiller_assurance", label: "Conseiller Assurance" },
-  { value: "banquier", label: "Banquier" },
-  { value: "charge_projets_ong", label: "Chargé Projets ONG" },
-  { value: "responsable_microfinance", label: "Microfinance" },
-  { value: "transitaire", label: "Transitaire / Douanier" },
-  { value: "consultant", label: "Consultant" },
-  { value: "entrepreneur", label: "Entrepreneur" },
-  { value: "autre", label: "Autre profil" },
+  { value: "analyste_credit",       label: "Analyste crédit" },
+  { value: "architecte",            label: "Architecte / BTP" },
+  { value: "auditeur",              label: "Auditeur" },
+  { value: "banquier",              label: "Banquier / Analyste crédit" },
+  { value: "charge_projets_ong",    label: "Chargé de projets ONG" },
+  { value: "commercial",            label: "Commercial / Business Dev" },
+  { value: "comptable",             label: "Comptable / Expert-comptable" },
+  { value: "conducteur_travaux",    label: "Conducteur de travaux" },
+  { value: "consultant",            label: "Consultant" },
+  { value: "coordinateur_ong",      label: "Coordinateur ONG" },
+  { value: "credit_officer",        label: "Credit Officer / IMF" },
+  { value: "daa",                   label: "Data Analyst / BI" },
+  { value: "data_scientist",        label: "Data Scientist" },
+  { value: "daf",                   label: "Directeur Financier (DAF)" },
+  { value: "directeur_commercial",  label: "Directeur commercial" },
+  { value: "douanier",              label: "Douanier / Agent transit" },
+  { value: "drh",                   label: "DRH / Responsable RH" },
+  { value: "entrepreneur",          label: "Entrepreneur / CEO" },
+  { value: "fiscaliste",            label: "Fiscaliste" },
+  { value: "gestionnaire_rh",       label: "Gestionnaire RH / Paie" },
+  { value: "ingenieur",             label: "Ingénieur / Chef de projet" },
+  { value: "juriste",               label: "Juriste / Avocat" },
+  { value: "medecin",               label: "Médecin / Professionnel de santé" },
+  { value: "notaire",               label: "Notaire" },
+  { value: "pharmacien",            label: "Pharmacien" },
+  { value: "responsable_microfinance", label: "Responsable Microfinance (SFD)" },
+  { value: "trader",                label: "Trader / Gestionnaire actifs" },
+  { value: "transitaire",           label: "Transitaire / Commerce international" },
+  { value: "autre",                 label: "Autre" },
+];
+
+const SECTEURS = [
+  { value: "administration_publique", label: "Administration publique" },
+  { value: "agriculture_agro",      label: "Agriculture / Agro-industrie" },
+  { value: "assurance",             label: "Assurance" },
+  { value: "btp_construction",      label: "BTP / Construction" },
+  { value: "commerce_distribution", label: "Commerce / Distribution" },
+  { value: "comptabilite_audit",    label: "Comptabilité / Audit / Fiscal" },
+  { value: "education_formation",   label: "Éducation / Formation" },
+  { value: "energie_mines",         label: "Énergie / Mines / Environnement" },
+  { value: "finance_banque",        label: "Finance / Banque" },
+  { value: "immobilier",            label: "Immobilier" },
+  { value: "industrie_manufacture", label: "Industrie / Manufacture" },
+  { value: "juridique_notariat",    label: "Juridique / Notariat" },
+  { value: "microfinance_imf",      label: "Microfinance / IMF" },
+  { value: "ong_developpement",     label: "ONG / Développement / Humanitaire" },
+  { value: "recherche_conseil",     label: "Recherche / Conseil" },
+  { value: "ressources_humaines",   label: "Ressources humaines" },
+  { value: "sante_pharmacie",       label: "Santé / Pharmacie" },
+  { value: "technologie_numerique", label: "Technologie / Numérique" },
+  { value: "telecom_medias",        label: "Télécommunications / Médias" },
+  { value: "tourisme_hotellerie",   label: "Tourisme / Hôtellerie" },
+  { value: "transport_logistique",  label: "Transport / Logistique" },
+  { value: "autre",                 label: "Autre" },
 ];
 
 const PAYS = [
@@ -43,6 +185,7 @@ const XP_LEVELS = [
 ];
 
 export const ProfilScreen = () => {
+  const { t } = useTranslation();
   const C = useColors();
   const styles = useMemo(() => makeStyles(C), [C]);
   const theme = useThemeStore((s) => s.theme);
@@ -54,8 +197,44 @@ export const ProfilScreen = () => {
   const [pays, setPays] = useState((profil as any)?.pays || "");
   const [entreprise, setEntreprise] = useState((profil as any)?.entreprise || "");
   const [niveauExperience, setNiveauExperience] = useState((profil as any)?.niveau_experience || "junior");
+  const [bio, setBio] = useState((profil as any)?.bio || "");
+
+  const _secteurInitial = (profil as any)?.secteur || "";
+  const _inList = SECTEURS.some((s) => s.value === _secteurInitial);
+  const [secteurSelect, setSecteurSelect] = useState(_inList ? _secteurInitial : (_secteurInitial ? "autre" : ""));
+  const [secteurCustom, setSecteurCustom] = useState(!_inList ? _secteurInitial : "");
+  const secteur = secteurSelect === "autre" ? secteurCustom : secteurSelect;
+
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // Photo de profil
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  useEffect(() => {
+    if (!(profil as any)?.has_photo || photoUri) return;
+    (async () => {
+      try {
+        const token = await SecureStore.getItemAsync("yukpopro_token");
+        const dest = `${FileSystem.cacheDirectory}profile_photo`;
+        const res = await FileSystem.downloadAsync(
+          profilApi.getPhotoUrl(),
+          dest,
+          token ? { headers: { Authorization: `Bearer ${token}` } } : {},
+        );
+        if (res.status === 200) setPhotoUri(res.uri);
+      } catch { /* pas bloquant */ }
+    })();
+  }, [profil]);
+
+  // Changement de mot de passe
+  const [mdpModal, setMdpModal] = useState(false);
+  const [ancienMdp, setAncienMdp] = useState("");
+  const [nouveauMdp, setNouveauMdp] = useState("");
+  const [confirmMdp, setConfirmMdp] = useState("");
+  const [mdpLoading, setMdpLoading] = useState(false);
+  const [showAncien, setShowAncien] = useState(false);
+  const [showNouveau, setShowNouveau] = useState(false);
 
   const xp = (profil as any)?.xp_points || 0;
   const currentLevel = XP_LEVELS.filter((l) => l.xp <= xp).pop() || XP_LEVELS[0];
@@ -68,7 +247,7 @@ export const ProfilScreen = () => {
     setLoading(true);
     setSaved(false);
     try {
-      const updated = await profilApi.update({ metier, pays, entreprise, niveau_experience: niveauExperience });
+      const updated = await profilApi.update({ metier, pays, entreprise, secteur, bio, niveau_experience: niveauExperience });
       setProfil(updated);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -77,6 +256,43 @@ export const ProfilScreen = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePickPhoto = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({ type: "image/*", copyToCacheDirectory: true });
+      if (result.canceled || !result.assets?.[0]) return;
+      const asset = result.assets[0];
+      setPhotoUploading(true);
+      await profilApi.uploadPhoto(asset.uri, asset.mimeType || "image/jpeg", asset.name || "photo.jpg");
+      setPhotoUri(asset.uri);
+    } catch (err: any) {
+      Alert.alert("Erreur", err?.response?.data?.detail || "Impossible d'uploader la photo");
+    } finally { setPhotoUploading(false); }
+  };
+
+  const handleDeletePhoto = () => {
+    Alert.alert("Supprimer la photo", "Voulez-vous supprimer votre photo de profil ?", [
+      { text: "Annuler", style: "cancel" },
+      { text: "Supprimer", style: "destructive", onPress: async () => {
+        try { await profilApi.supprimerPhoto(); setPhotoUri(null); }
+        catch { Alert.alert("Erreur", "Impossible de supprimer la photo"); }
+      }},
+    ]);
+  };
+
+  const handleChangerMdp = async () => {
+    if (nouveauMdp.length < 8) { Alert.alert("Erreur", "Minimum 8 caractères"); return; }
+    if (nouveauMdp !== confirmMdp) { Alert.alert("Erreur", "Les mots de passe ne correspondent pas"); return; }
+    setMdpLoading(true);
+    try {
+      await authApi.changerMotDePasse(ancienMdp, nouveauMdp);
+      Alert.alert("Succès", "Mot de passe modifié avec succès");
+      setMdpModal(false);
+      setAncienMdp(""); setNouveauMdp(""); setConfirmMdp("");
+    } catch (err: any) {
+      Alert.alert("Erreur", err?.response?.data?.detail || "Ancien mot de passe incorrect");
+    } finally { setMdpLoading(false); }
   };
 
   const handleLogout = () => {
@@ -96,11 +312,28 @@ export const ProfilScreen = () => {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.profileHeader}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {((user as any)?.nom || "U").charAt(0).toUpperCase()}
-          </Text>
-        </View>
+        {/* Avatar cliquable */}
+        <TouchableOpacity onPress={handlePickPhoto} activeOpacity={0.8} style={{ position: "relative" }}>
+          {photoUri ? (
+            <Image source={{ uri: photoUri }} style={styles.avatarPhoto} />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {((user as any)?.nom || "U").charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
+          <View style={styles.cameraOverlay}>
+            {photoUploading
+              ? <ActivityIndicator size="small" color="#fff" />
+              : <Ionicons name="camera" size={16} color="#fff" />}
+          </View>
+        </TouchableOpacity>
+        {photoUri && (
+          <TouchableOpacity onPress={handleDeletePhoto} style={{ marginTop: 4 }}>
+            <Text style={{ color: C.error, fontSize: 12 }}>Supprimer la photo</Text>
+          </TouchableOpacity>
+        )}
         <Text style={styles.userName}>{(user as any)?.nom || "Utilisateur"}</Text>
         <Text style={styles.userEmail}>{(user as any)?.email || ""}</Text>
 
@@ -140,6 +373,19 @@ export const ProfilScreen = () => {
         </View>
       </View>
 
+      {/* Sécurité */}
+      <Text style={styles.sectionTitle}>Sécurité</Text>
+      <TouchableOpacity style={styles.themeRow} onPress={() => setMdpModal(true)} activeOpacity={0.7}>
+        <View style={[styles.themeIconWrap, { backgroundColor: `${C.primary}20` }]}>
+          <Ionicons name="lock-closed-outline" size={20} color={C.primary} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.themeLabel}>Modifier le mot de passe</Text>
+          <Text style={styles.themeSub}>Changez votre mot de passe de connexion</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={C.textMuted} />
+      </TouchableOpacity>
+
       {/* Theme toggle — Apparence */}
       <Text style={styles.sectionTitle}>Apparence</Text>
       <TouchableOpacity style={styles.themeRow} onPress={toggleTheme} activeOpacity={0.7}>
@@ -157,37 +403,42 @@ export const ProfilScreen = () => {
 
       <Text style={styles.sectionTitle}>Informations professionnelles</Text>
 
-      <Text style={styles.label}>Métier</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={styles.chipRow}>
-          {METIERS.map((m) => (
-            <TouchableOpacity
-              key={m.value}
-              style={[styles.chip, metier === m.value && styles.chipActive]}
-              onPress={() => setMetier(m.value)}
-            >
-              <Text style={[styles.chipText, metier === m.value && styles.chipTextActive]}>
-                {m.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
+      <ComboField
+        label="Métier / Profession"
+        value={metier}
+        onChange={setMetier}
+        options={METIERS}
+        placeholder="— Rechercher votre métier —"
+        C={C}
+      />
 
-      <Text style={styles.label}>Pays</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={styles.chipRow}>
-          {PAYS.map((p) => (
-            <TouchableOpacity
-              key={p}
-              style={[styles.chip, pays === p && styles.chipActive]}
-              onPress={() => setPays(p)}
-            >
-              <Text style={[styles.chipText, pays === p && styles.chipTextActive]}>{p}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
+      <ComboField
+        label="Pays"
+        value={pays}
+        onChange={setPays}
+        options={PAYS.map((p) => ({ value: p, label: p }))}
+        placeholder="— Sélectionner votre pays —"
+        C={C}
+      />
+
+      <ComboField
+        label="Secteur d'activité"
+        value={secteurSelect}
+        onChange={setSecteurSelect}
+        options={SECTEURS}
+        placeholder="— Rechercher un secteur —"
+        C={C}
+      />
+      {secteurSelect === "autre" && (
+        <TextInput
+          style={[styles.input, { marginTop: 8 }]}
+          placeholder="Précisez votre secteur…"
+          placeholderTextColor={C.textMuted}
+          value={secteurCustom}
+          onChangeText={setSecteurCustom}
+        />
+      )}
+
 
       <Text style={styles.label}>Entreprise / Organisation</Text>
       <TextInput
@@ -196,6 +447,18 @@ export const ProfilScreen = () => {
         placeholderTextColor={C.textMuted}
         value={entreprise}
         onChangeText={setEntreprise}
+      />
+
+      <Text style={styles.label}>Bio professionnelle</Text>
+      <TextInput
+        style={styles.bioInput}
+        placeholder="Décrivez votre expertise, spécialités, contexte…"
+        placeholderTextColor="#94a3b8"
+        value={bio}
+        onChangeText={setBio}
+        multiline
+        numberOfLines={4}
+        textAlignVertical="top"
       />
 
       <Text style={styles.label}>Niveau d'expérience</Text>
@@ -244,6 +507,55 @@ export const ProfilScreen = () => {
 
       <Text style={styles.version}>YukpoPro v1.0 · Intelligence Professionnelle Africaine</Text>
     </ScrollView>
+
+    {/* Modal — Changer le mot de passe */}
+    <Modal visible={mdpModal} transparent animationType="slide" onRequestClose={() => setMdpModal(false)}>
+      <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }} onPress={() => setMdpModal(false)}>
+        <View style={{ flex: 1 }} />
+        <Pressable style={{ backgroundColor: C.bgCard, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}
+                   onPress={() => {}}>
+          <Text style={{ color: C.textPrimary, fontSize: 18, fontWeight: "700", marginBottom: 4 }}>Modifier le mot de passe</Text>
+          <Text style={{ color: C.textMuted, fontSize: 13, marginBottom: 20 }}>Minimum 8 caractères, une majuscule, un chiffre</Text>
+
+          {/* Ancien mdp */}
+          <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: C.bgInput, borderWidth: 1, borderColor: C.bgCardBorder, borderRadius: 12, paddingHorizontal: 14, marginBottom: 12 }}>
+            <TextInput secureTextEntry={!showAncien} value={ancienMdp} onChangeText={setAncienMdp}
+                       placeholder="Mot de passe actuel" placeholderTextColor={C.textMuted}
+                       style={{ flex: 1, color: C.textPrimary, fontSize: 15, paddingVertical: 14 }} />
+            <TouchableOpacity onPress={() => setShowAncien(v => !v)}>
+              <Ionicons name={showAncien ? "eye-off-outline" : "eye-outline"} size={20} color={C.textMuted} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Nouveau mdp */}
+          <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: C.bgInput, borderWidth: 1, borderColor: C.bgCardBorder, borderRadius: 12, paddingHorizontal: 14, marginBottom: 12 }}>
+            <TextInput secureTextEntry={!showNouveau} value={nouveauMdp} onChangeText={setNouveauMdp}
+                       placeholder="Nouveau mot de passe" placeholderTextColor={C.textMuted}
+                       style={{ flex: 1, color: C.textPrimary, fontSize: 15, paddingVertical: 14 }} />
+            <TouchableOpacity onPress={() => setShowNouveau(v => !v)}>
+              <Ionicons name={showNouveau ? "eye-off-outline" : "eye-outline"} size={20} color={C.textMuted} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Confirmer */}
+          <View style={{ backgroundColor: C.bgInput, borderWidth: 1, borderColor: nouveauMdp && confirmMdp && nouveauMdp !== confirmMdp ? C.error : C.bgCardBorder, borderRadius: 12, paddingHorizontal: 14, marginBottom: 20 }}>
+            <TextInput secureTextEntry value={confirmMdp} onChangeText={setConfirmMdp}
+                       placeholder="Confirmer le nouveau mot de passe" placeholderTextColor={C.textMuted}
+                       style={{ color: C.textPrimary, fontSize: 15, paddingVertical: 14 }} />
+          </View>
+
+          <TouchableOpacity
+            style={{ backgroundColor: C.primary, borderRadius: 14, paddingVertical: 16, alignItems: "center", opacity: (!ancienMdp || nouveauMdp.length < 8 || nouveauMdp !== confirmMdp || mdpLoading) ? 0.4 : 1 }}
+            onPress={handleChangerMdp}
+            disabled={!ancienMdp || nouveauMdp.length < 8 || nouveauMdp !== confirmMdp || mdpLoading}
+          >
+            {mdpLoading
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={{ color: "#fff", fontWeight: "700", fontSize: 16 }}>Changer le mot de passe</Text>}
+          </TouchableOpacity>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 };
 
@@ -256,7 +568,19 @@ const makeStyles = (C: Colors) => StyleSheet.create({
     backgroundColor: `${C.primary}30`,
     borderWidth: 2, borderColor: C.primary,
     alignItems: "center", justifyContent: "center",
-    marginBottom: 12,
+    marginBottom: 4,
+  },
+  avatarPhoto: {
+    width: 80, height: 80, borderRadius: 24,
+    borderWidth: 2, borderColor: C.primary,
+    marginBottom: 4,
+  },
+  cameraOverlay: {
+    position: "absolute", bottom: 8, right: -8,
+    width: 28, height: 28, borderRadius: 14,
+    backgroundColor: C.primary,
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 2, borderColor: C.bg,
   },
   avatarText: { color: C.primary, fontSize: 36, fontWeight: "900" },
   userName: { color: C.textPrimary, fontSize: 22, fontWeight: "700" },
@@ -298,6 +622,13 @@ const makeStyles = (C: Colors) => StyleSheet.create({
     borderWidth: 1, borderColor: C.bgCardBorder,
     borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12,
     color: C.textPrimary, fontSize: 15,
+  },
+  bioInput: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1, borderColor: "#cbd5e1",
+    borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12,
+    color: "#1e293b", fontSize: 15,
+    minHeight: 100,
   },
   niveauRow: { flexDirection: "row", gap: 10, marginBottom: 8 },
   niveauBtn: {

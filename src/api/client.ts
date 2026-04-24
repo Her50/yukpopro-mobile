@@ -58,6 +58,13 @@ export const authApi = {
   logout: async () => {
     await SecureStore.deleteItemAsync("yukpopro_token");
   },
+
+  changerMotDePasse: async (ancien_mdp: string, nouveau_mdp: string) => {
+    const { data } = await http.post("/auth/change-password", null, {
+      params: { ancien_mdp, nouveau_mdp },
+    });
+    return data as { succes: boolean; message: string };
+  },
 };
 
 // ── Profil Pro ────────────────────────────────────────────────────────────────
@@ -74,6 +81,18 @@ export const profilApi = {
   update: async (payload: Record<string, unknown>) => {
     const { data } = await http.patch("/pro/profil/", payload);
     return data;
+  },
+  uploadPhoto: async (uri: string, mimeType: string, filename: string) => {
+    const form = new FormData();
+    form.append("fichier", { uri, type: mimeType, name: filename } as any);
+    const { data } = await http.post("/pro/profil/photo", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data;
+  },
+  getPhotoUrl: () => `${http.defaults.baseURL}/pro/profil/photo`,
+  supprimerPhoto: async () => {
+    await http.delete("/pro/profil/photo");
   },
 };
 
