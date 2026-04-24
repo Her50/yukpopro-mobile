@@ -102,6 +102,17 @@ export const OnboardingScreen = ({ navigation, route }: any) => {
           <Text style={styles.subtitle}>Étape {step}/2 — Personnalisez votre profil Yukpo</Text>
         </View>
 
+        {/* Bannière de bienvenue — étape 1 uniquement */}
+        {step === 1 && (
+          <View style={styles.welcomeBanner}>
+            <Ionicons name="sparkles-outline" size={18} color="#00B0F0" style={{ flexShrink: 0, marginTop: 1 }} />
+            <Text style={styles.welcomeText}>
+              <Text style={styles.welcomeTitle}>🎉 Compte créé ! </Text>
+              Configurez votre profil pour que YukpoPro se spécialise dans votre métier et pays.
+            </Text>
+          </View>
+        )}
+
         {/* Progress */}
         <View style={styles.progressBar}>
           <View style={[styles.progressFill, { width: step === 1 ? "50%" : "100%" }]} />
@@ -250,7 +261,22 @@ export const OnboardingScreen = ({ navigation, route }: any) => {
 const makeStyles = (C: Colors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   scroll: { padding: 24, paddingBottom: 48 },
-  header: { alignItems: "center", marginBottom: 24 },
+  header: { alignItems: "center", marginBottom: 16 },
+  // Bannière de bienvenue
+  welcomeBanner: {
+    flexDirection: "row", alignItems: "flex-start", gap: 10,
+    borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14,
+    marginBottom: 20,
+    backgroundColor: "rgba(0,84,166,0.15)",
+    borderLeftWidth: 3, borderLeftColor: "#00B0F0",
+    borderWidth: 1, borderColor: "rgba(0,176,240,0.2)",
+  },
+  welcomeTitle: {
+    color: C.textPrimary, fontWeight: "700", fontSize: 13,
+  },
+  welcomeText: {
+    flex: 1, color: C.textSecondary, fontSize: 12, lineHeight: 18,
+  },
   logoCircle: {
     width: 72, height: 72, borderRadius: 18,
     backgroundColor: "#fff", alignItems: "center", justifyContent: "center",
