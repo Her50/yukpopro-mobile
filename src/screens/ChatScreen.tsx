@@ -13,7 +13,8 @@ import { Ionicons } from "@expo/vector-icons";
 import Markdown from "react-native-markdown-display";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
-import { useColors, type Colors, useAuthStore, useProfilStore } from "@/store";
+import { useTranslation } from "react-i18next";
+import { useColors, type Colors, useAuthStore, useProfilStore, useCopiloteStore } from "@/store";
 import { chatApi, reunionsApi, generateurApi } from "@/api/client";
 import { METIERS_CONFIG } from "@/data/metiers-config";
 
@@ -42,11 +43,14 @@ interface AttachedFile {
 // ── Composant principal ───────────────────────────────────────────────────────
 
 export const ChatScreen = ({ navigation }: any) => {
+  const { t } = useTranslation();
   const C = useColors();
   const styles = useMemo(() => makeStyles(C), [C]);
   const markdownStyles = useMemo(() => makeMarkdownStyles(C), [C]);
   const { user } = useAuthStore();
   const { profil } = useProfilStore();
+  const activeDocument = useCopiloteStore(s => s.activeDocument);
+  const setActiveDocument = useCopiloteStore(s => s.setActiveDocument);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -78,7 +82,7 @@ export const ChatScreen = ({ navigation }: any) => {
       ));
     }
     const id = Date.now().toString();
-    const title = "Nouvelle conversation";
+    const title = t('chat.newConversation');
     setSessions(prev => [{ id, title, messages: [] }, ...prev].slice(0, 30));
     setActiveSessionId(id);
     setMessages([]);
@@ -139,6 +143,12 @@ export const ChatScreen = ({ navigation }: any) => {
         message: content,
         pays: profil?.pays,
         fichiers: fileData ? [fileData] : undefined,
+        document_ref: activeDocument ? {
+          id: activeDocument.id,
+          titre: activeDocument.titre,
+          type_doc: activeDocument.type_doc,
+          contenu_genere: activeDocument.contenu_genere,
+        } : undefined,
       });
 
       setMessages(prev => prev.map(m =>
@@ -148,7 +158,7 @@ export const ChatScreen = ({ navigation }: any) => {
       ));
 
       // Mise à jour titre session
-      if (sessions.find(s => s.id === activeSessionId)?.title === "Nouvelle conversation") {
+      if (sessions.find(s => s.id === activeSessionId)?.title === t('chat.newConversation')) {
         setSessions(prev => prev.map(s =>
           s.id === activeSessionId
             ? { ...s, title: content.slice(0, 40) }
@@ -423,6 +433,19 @@ export const ChatScreen = ({ navigation }: any) => {
         />
       )}
 
+      {/* Document en cours d'édition */}
+      {activeDocument && (
+        <View style={[styles.fileBar, { backgroundColor: C.primary + "15", borderColor: C.primary + "40" }]}>
+          <Ionicons name="create-outline" size={16} color={C.primary} />
+          <Text style={[styles.fileBarName, { color: C.primary }]} numberOfLines={1}>
+            Édition : {activeDocument.titre}
+          </Text>
+          <TouchableOpacity onPress={() => setActiveDocument(null)}>
+            <Ionicons name="close-circle" size={18} color={C.textMuted} />
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Fichier attaché */}
       {attachedFile && (
         <View style={styles.fileBar}>
@@ -456,7 +479,7 @@ export const ChatScreen = ({ navigation }: any) => {
         <TextInput
           ref={inputRef}
           style={styles.input}
-          placeholder={attachedFile ? "Décrivez ce que faire avec ce fichier..." : "Posez votre question..."}
+          placeholder={attachedFile ? t('chat.attachPlaceholder') : t('chat.placeholder')}
           placeholderTextColor={C.textMuted}
           value={input}
           onChangeText={setInput}
@@ -481,18 +504,18 @@ export const ChatScreen = ({ navigation }: any) => {
         <View style={styles.historyOverlay}>
           <View style={styles.historyCard}>
             <View style={styles.historyHeader}>
-              <Text style={styles.historyTitle}>Conversations</Text>
+              <Text style={styles.historyTitle}>{t('chat.history')}</Text>
               <TouchableOpacity onPress={() => setShowHistory(false)}>
                 <Ionicons name="close" size={24} color={C.textPrimary} />
               </TouchableOpacity>
             </View>
             <TouchableOpacity style={styles.newSessionBtn} onPress={() => { newSession(); setShowHistory(false); }}>
               <Ionicons name="add-circle-outline" size={18} color={C.primary} />
-              <Text style={styles.newSessionText}>Nouvelle conversation</Text>
+              <Text style={styles.newSessionText}>{t('chat.newConversation')}</Text>
             </TouchableOpacity>
             <ScrollView>
               {sessions.length === 0
-                ? <Text style={styles.historyEmpty}>Aucune conversation</Text>
+                ? <Text style={styles.historyEmpty}>{t('chat.noConversations')}</Text>
                 : sessions.map(s => (
                   <TouchableOpacity key={s.id} style={styles.sessionItem} onPress={() => loadSession(s)}>
                     <Ionicons name="chatbubble-outline" size={16} color={C.textMuted} />

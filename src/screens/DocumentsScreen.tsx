@@ -1,5 +1,6 @@
 /**
- * Mes Documents — listing + téléchargement (Bureau partagé).
+ * Mes Documents — historique des documents générés par l'IA (YukpoPro).
+ * Affiche titre, type, date. Permet retélécharger, supprimer et améliorer via chat.
  */
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
@@ -7,36 +8,23 @@ import {
   RefreshControl, Linking, ActivityIndicator, Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useColors, type Colors } from "@/store";
-import { documentsApi } from "@/api/client";
+import { useColors, type Colors, useCopiloteStore } from "@/store";
+import { generateurApi, type DocumentHistorique } from "@/api/client";
 
-type DocItem = {
-  id?: number | string;
-  nom?: string;
-  nom_fichier?: string;
-  fichier?: string;
-  type?: string;
-  type_document?: string;
-  date?: string;
-  date_creation?: string;
-  created_at?: string;
-};
-
-const _nom = (d: DocItem) => d.nom || d.nom_fichier || d.fichier || `doc-${d.id}`;
-const _type = (d: DocItem) => d.type || d.type_document || "—";
-const _date = (d: DocItem) => d.date || d.date_creation || d.created_at || "";
-
-export const DocumentsScreen = () => {
+export const DocumentsScreen = ({ navigation }: any) => {
   const C = useColors();
   const styles = useMemo(() => makeStyles(C), [C]);
-  const [docs, setDocs]       = useState<DocItem[]>([]);
+  const setActiveDocument = useCopiloteStore(s => s.setActiveDocument);
+  const clearSession = useCopiloteStore(s => s.clearSession);
+
+  const [docs, setDocs]       = useState<DocumentHistorique[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
 
   const charger = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const r = await documentsApi.lister();
+      const r = await generateurApi.historiqueDocuments();
       setDocs(r.documents || []);
     } catch (e: any) {
       setError(e?.response?.data?.detail || e?.message || "Erreur");
@@ -47,21 +35,19 @@ export const DocumentsScreen = () => {
 
   useEffect(() => { charger(); }, [charger]);
 
-  const telecharger = (d: DocItem) => {
-    const nom = _nom(d);
-    if (!nom) return Alert.alert("Document", "Nom de fichier indisponible");
-    Linking.openURL(documentsApi.telechargerUrl(nom));
+  const telecharger = (d: DocumentHistorique) => {
+    if (!d.fichier) return Alert.alert("Document", "Fichier indisponible");
+    Linking.openURL(generateurApi.urlTelechargement(d.fichier));
   };
 
-  const supprimer = (d: DocItem) => {
-    if (!d.id) return;
-    Alert.alert("Confirmer", `Supprimer "${_nom(d)}" ?`, [
+  const supprimer = (d: DocumentHistorique) => {
+    Alert.alert("Confirmer", `Supprimer "${d.titre}" ?`, [
       { text: "Annuler", style: "cancel" },
       {
         text: "Supprimer", style: "destructive",
         onPress: async () => {
           try {
-            await documentsApi.supprimer(d.id!);
+            await generateurApi.supprimerDocument(d.id);
             setDocs((prev) => prev.filter((x) => x.id !== d.id));
           } catch (e: any) {
             Alert.alert("Erreur", e?.response?.data?.detail || "Échec");
@@ -71,21 +57,47 @@ export const DocumentsScreen = () => {
     ]);
   };
 
-  const renderItem = ({ item }: { item: DocItem }) => (
+  const ameliorerViaChat = (d: DocumentHistorique) => {
+    clearSession();
+    setActiveDocument({
+      id: d.id,
+      titre: d.titre,
+      type_doc: d.type_doc,
+      contenu_genere: d.contenu_genere,
+    });
+    navigation?.navigate?.("YukpoIA");
+  };
+
+  const formatDate = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleDateString("fr-FR", {
+        day: "2-digit", month: "short", year: "numeric",
+      });
+    } catch { return iso; }
+  };
+
+  const renderItem = ({ item }: { item: DocumentHistorique }) => (
     <View style={styles.item}>
-      <Ionicons name="document-text" size={28} color={C.primary} />
+      <Ionicons
+        name={item.type_doc?.startsWith("slides") ? "easel-outline" : "document-text"}
+        size={28}
+        color={C.primary}
+      />
       <View style={styles.itemBody}>
-        <Text style={styles.itemTitle} numberOfLines={1}>{_nom(item)}</Text>
-        <Text style={styles.itemMeta}>{_type(item)} · {_date(item).slice(0, 10)}</Text>
+        <Text style={styles.itemTitle} numberOfLines={2}>{item.titre}</Text>
+        <Text style={styles.itemMeta}>{item.type_doc} · {formatDate(item.cree_le)}</Text>
       </View>
-      <TouchableOpacity onPress={() => telecharger(item)} style={styles.iconBtn}>
-        <Ionicons name="cloud-download-outline" size={22} color={C.primary} />
+      <TouchableOpacity onPress={() => ameliorerViaChat(item)} style={styles.iconBtn} accessibilityLabel="Améliorer via chat">
+        <Ionicons name="chatbubble-ellipses-outline" size={22} color={C.primary} />
       </TouchableOpacity>
-      {item.id && (
-        <TouchableOpacity onPress={() => supprimer(item)} style={styles.iconBtn}>
-          <Ionicons name="trash-outline" size={22} color={C.error} />
+      {item.fichier && (
+        <TouchableOpacity onPress={() => telecharger(item)} style={styles.iconBtn}>
+          <Ionicons name="cloud-download-outline" size={22} color={C.primary} />
         </TouchableOpacity>
       )}
+      <TouchableOpacity onPress={() => supprimer(item)} style={styles.iconBtn}>
+        <Ionicons name="trash-outline" size={22} color={C.error} />
+      </TouchableOpacity>
     </View>
   );
 
@@ -97,12 +109,12 @@ export const DocumentsScreen = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.h1}>Mes Documents</Text>
-        <Text style={styles.muted}>{docs.length} document(s)</Text>
+        <Text style={styles.muted}>{docs.length} document(s) · Touchez 💬 pour améliorer via le chat</Text>
       </View>
       {error && <Text style={styles.err}>{error}</Text>}
       <FlatList
         data={docs}
-        keyExtractor={(d, i) => String(d.id ?? _nom(d) ?? i)}
+        keyExtractor={(d) => String(d.id)}
         renderItem={renderItem}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={charger} tintColor={C.primary} />}
         ListEmptyComponent={

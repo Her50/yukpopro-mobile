@@ -161,21 +161,31 @@ export interface MobileMessage {
   agent_utilise?: string | null;
 }
 
+export interface ActiveDocument {
+  id: number;
+  titre: string;
+  type_doc: string;
+  contenu_genere?: string;
+}
+
 interface CopiloteState {
   messages: MobileMessage[];
   isLoading: boolean;
   sessionId: string | null;
+  activeDocument: ActiveDocument | null;
   addMessage: (m: MobileMessage) => void;
   updateLastMessage: (content: string, agent?: string | null) => void;
   setLoading: (v: boolean) => void;
   clearSession: () => void;
   setSessionId: (id: string) => void;
+  setActiveDocument: (doc: ActiveDocument | null) => void;
 }
 
 export const useCopiloteStore = create<CopiloteState>()((set) => ({
   messages: [],
   isLoading: false,
   sessionId: null,
+  activeDocument: null,
   addMessage: (m) => set((s) => ({ messages: [...s.messages, m] })),
   updateLastMessage: (content, agent) =>
     set((s) => {
@@ -185,6 +195,7 @@ export const useCopiloteStore = create<CopiloteState>()((set) => ({
       return { messages: msgs };
     }),
   setLoading: (v) => set({ isLoading: v }),
-  clearSession: () => set({ messages: [], sessionId: null }),
+  clearSession: () => set({ messages: [], sessionId: null, activeDocument: null }),
   setSessionId: (id) => set({ sessionId: id }),
+  setActiveDocument: (doc) => set({ activeDocument: doc }),
 }));

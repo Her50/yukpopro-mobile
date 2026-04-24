@@ -194,7 +194,7 @@ export const generateurApi = {
     contexte?: string;
     format_sortie?: string;
   }) => {
-    const { data } = await http.post("/pro/rapports/generer", req);
+    const { data } = await http.post("/pro/rapports/generer", req, { timeout: 270_000 });
     return data as { chemin_fichier?: string; fichier?: string; contenu_markdown?: string };
   },
   slides: async (req: {
@@ -204,7 +204,7 @@ export const generateurApi = {
     contexte?: string;
     format_sortie?: string;
   }) => {
-    const { data } = await http.post("/pro/slides/generer", req);
+    const { data } = await http.post("/pro/slides/generer", req, { timeout: 270_000 });
     return data as { chemin_fichier?: string; fichier?: string; contenu_markdown?: string };
   },
   analyserEtGenerer: async (params: {
@@ -227,18 +227,18 @@ export const generateurApi = {
     });
     const { data } = await http.post("/pro/analyser-et-generer", form, {
       headers: { "Content-Type": "multipart/form-data" },
-      timeout: 180_000,
+      timeout: 270_000,
     });
     return data as { chemin_fichier?: string; fichier?: string; contenu_markdown?: string; nb_fichiers_analyses?: number };
   },
   traduire: async (req: Record<string, unknown>) => {
-    const { data } = await http.post("/pro/traduire", req);
+    const { data } = await http.post("/pro/traduire", req, { timeout: 270_000 });
     return data;
   },
   traduireFichier: async (formData: FormData) => {
     const { data } = await http.post("/pro/traduire-fichier", formData, {
       headers: { "Content-Type": "multipart/form-data" },
-      timeout: 180_000,
+      timeout: 270_000,
     });
     return data as { texte_traduit: string; langue_source: string; langue_cible: string; nb_mots_source: number; nb_mots_cible: number; chemin_docx?: string };
   },
@@ -281,7 +281,12 @@ export const generateurApi = {
 // ── Chat unifié ───────────────────────────────────────────────────────────────
 
 export const chatApi = {
-  send: async (req: { message: string; pays?: string; fichiers?: unknown[] }) => {
+  send: async (req: {
+    message: string;
+    pays?: string;
+    fichiers?: unknown[];
+    document_ref?: { id: number; titre: string; type_doc: string; contenu_genere?: string };
+  }) => {
     try {
       const { data } = await http.post("/pro/copilote/chat", req);
       return data as { reponse: string; agent_utilise?: string; session_id?: string };
@@ -387,7 +392,7 @@ export const reunionsApi = {
     contexte?: string;
     duree_secondes?: number;
   }) => {
-    const { data } = await http.post("/pro/reunions/generer-rapport", payload);
+    const { data } = await http.post("/pro/reunions/generer-rapport", payload, { timeout: 180_000 });
     return data as { rapport: string; titre: string; langue: string; fichier?: string; sauvegarde_mes_documents?: boolean };
   },
 };
