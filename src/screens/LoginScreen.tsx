@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors, type Colors, useAuthStore } from "@/store";
-import { authApi } from "@/api/client";
+import { authApi, profilApi } from "@/api/client";
 import { COUNTRIES, DEFAULT_COUNTRY, type Country } from "@/data/countries";
 
 export const LoginScreen = ({ navigation }: any) => {
@@ -59,7 +59,15 @@ export const LoginScreen = ({ navigation }: any) => {
     try {
       await authApi.login(email, password);
       const user = await authApi.me();
-      setAuth(user);
+      // Vérifier si le profil existe
+      let profil = null;
+      try { profil = await profilApi.get(); } catch {}
+      if (profil) {
+        setAuth(user); // profil ok → accès direct à l'app
+      } else {
+        // 1ère connexion : onboarding d'abord, setAuth après création profil
+        navigation.navigate("Onboarding", { pendingUser: user });
+      }
     } catch (err: any) {
       Alert.alert("Connexion échouée", err?.response?.data?.detail || "Email ou mot de passe incorrect");
     } finally {
@@ -82,8 +90,8 @@ export const LoginScreen = ({ navigation }: any) => {
       await authApi.register({ email, password, nom, telephone } as any);
       await authApi.login(email, password);
       const user = await authApi.me();
-      setAuth(user);
-      navigation.navigate("Onboarding");
+      // Naviguer vers l'onboarding AVANT setAuth pour rester dans la stack non-auth
+      navigation.navigate("Onboarding", { pendingUser: user });
     } catch (err: any) {
       Alert.alert("Inscription échouée", err?.response?.data?.detail || "Une erreur est survenue");
     } finally {

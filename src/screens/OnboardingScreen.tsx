@@ -32,11 +32,12 @@ const METIERS = [
   { value: "autre",                 label: "Autre profil",        icon: "person-outline" },
 ];
 
-export const OnboardingScreen = ({ navigation }: any) => {
+export const OnboardingScreen = ({ navigation, route }: any) => {
   const C = useColors();
   const styles = useMemo(() => makeStyles(C), [C]);
-  const { user } = useAuthStore();
+  const { setAuth } = useAuthStore();
   const { setProfil } = useProfilStore();
+  const pendingUser = route?.params?.pendingUser ?? null;
   const [metier, setMetier] = useState("");
   const [pays, setPays] = useState<Country>(DEFAULT_COUNTRY);
   const [entreprise, setEntreprise] = useState("");
@@ -76,6 +77,8 @@ export const OnboardingScreen = ({ navigation }: any) => {
         langue: "fr",
       });
       setProfil(profil);
+      // Activer la session → le navigator bascule vers MainTabs
+      if (pendingUser) setAuth(pendingUser);
     } catch (err: any) {
       Alert.alert("Erreur", err?.response?.data?.detail || "Impossible de créer le profil. Réessayez.");
     } finally {
