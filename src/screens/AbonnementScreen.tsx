@@ -62,10 +62,10 @@ export const AbonnementScreen = () => {
       id: "business" as PlanId,
       nom: "Business",
       prix: 20000,
-      credits: "Illimité",
+      credits: "100 000 crédits/mois",
       color: C.gold,
       icon: "diamond-outline",
-      features: ["Crédits Yukpo illimités", "Aucune restriction d'usage", "Tous les agents Yukpo", "Accès API", "Multi-utilisateurs", "WhatsApp intégré", "Support dédié"],
+      features: ["100 000 crédits Yukpo / mois (~2 000 échanges)", "Tous les agents Yukpo", "Accès API", "Multi-utilisateurs (5 comptes)", "WhatsApp intégré", "Support dédié 24/7"],
     },
   ], [C]);
 
