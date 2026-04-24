@@ -16,7 +16,7 @@ import { TranslateLiveScreen } from "@/screens/TranslateLiveScreen";
 import { GenerateursScreen } from "@/screens/GenerateursScreen";
 import { ProfilScreen } from "@/screens/ProfilScreen";
 import { AbonnementScreen } from "@/screens/AbonnementScreen";
-import { EmploiScreen, MarchesScreen, EnquetesScreen, TraductionScreen, DocumentsScreen, AdminScreen, AdminPaiementsScreen } from "@/screens";
+import { EmploiScreen, MarchesScreen, EnquetesScreen, TraductionScreen, DocumentsScreen, AdminScreen, AdminPaiementsScreen, WalletScreen } from "@/screens";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -48,7 +48,7 @@ const MainTabs = () => {
             Emploi:      focused ? "briefcase"               : "briefcase-outline",
             Marches:     focused ? "hammer"                  : "hammer-outline",
             Generateurs: focused ? "folder-open"             : "folder-open-outline",
-            Abonnement:  focused ? "card"                    : "card-outline",
+            Wallet:      focused ? "wallet"                  : "wallet-outline",
             Profil:      focused ? "person-circle"           : "person-circle-outline",
           };
           return <Ionicons name={icons[route.name] as keyof typeof Ionicons.glyphMap} size={size - 2} color={color} />;
@@ -63,7 +63,7 @@ const MainTabs = () => {
       <Tab.Screen name="Emploi"      component={EmploiScreen}      options={{ tabBarLabel: "Emploi" }} />
       <Tab.Screen name="Marches"     component={MarchesScreen}     options={{ tabBarLabel: "Marchés" }} />
       <Tab.Screen name="Generateurs" component={GenerateursScreen} options={{ tabBarLabel: "Docs" }} />
-      <Tab.Screen name="Abonnement"  component={AbonnementScreen}  options={{ tabBarLabel: "Plan" }} />
+      <Tab.Screen name="Wallet"      component={WalletScreen}      options={{ tabBarLabel: "Wallet" }} />
       <Tab.Screen name="Profil"      component={ProfilScreen}      options={{ tabBarLabel: "Profil" }} />
     </Tab.Navigator>
   );
@@ -93,6 +93,7 @@ export const RootNavigator = () => {
             <Stack.Screen name="Main"        component={MainTabs} />
             <Stack.Screen name="Traduction"  component={TraductionScreen} options={{ headerShown: true, title: "Traduction" }} />
             <Stack.Screen name="Documents"   component={DocumentsScreen}  options={{ headerShown: true, title: "Mes Documents" }} />
+            <Stack.Screen name="Abonnement"  component={AbonnementScreen} options={{ headerShown: true, title: "Abonnement" }} />
             <Stack.Screen name="Admin"       component={AdminScreen}      options={{ headerShown: true, title: "Admin" }} />
             <Stack.Screen name="AdminPaiements" component={AdminPaiementsScreen} options={{ headerShown: true, title: "Paiements MoMo" }} />
           </>

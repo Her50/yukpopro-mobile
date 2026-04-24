@@ -16,3 +16,4 @@ export { TraductionScreen }    from "./TraductionScreen";
 export { DocumentsScreen }     from "./DocumentsScreen";
 export { AdminScreen }         from "./AdminScreen";
 export { AdminPaiementsScreen } from "./AdminPaiementsScreen";
+export { WalletScreen }         from "./WalletScreen";

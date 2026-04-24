@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
+import { useTranslation } from "react-i18next";
 import { useColors, type Colors } from "@/store";
 import { useNavigation } from "@react-navigation/native";
 import { generateurApi, infographieApi, DocumentHistorique, GabaritInfographie, ResultatInfographieReponse } from "@/api/client";
@@ -125,6 +126,7 @@ const TYPE_DOC_ICONS: Record<string, string> = {
 };
 
 export const GenerateursScreen = () => {
+  const { t } = useTranslation();
   const C = useColors();
   const styles = useMemo(() => makeStyles(C), [C]);
   const [tab, setTab]       = useState<TabType>("rapport");
@@ -798,7 +800,7 @@ export const GenerateursScreen = () => {
           {/* Gabarit selector (sauf custom) */}
           {infogMode !== "custom" && (
             <>
-              <Text style={styles.label}>Gabarit {gabaritCourant && <Text style={{ color: "#A78BFA" }}>· {gabaritCourant.prix_fcfa.toLocaleString("fr-FR")} FCFA = {gabaritCourant.prix_fcfa} crédits</Text>}</Text>
+              <Text style={styles.label}>Gabarit {gabaritCourant && <Text style={{ color: "#A78BFA" }}>· {gabaritCourant.prix_fcfa.toLocaleString("fr-FR")} crédits</Text>}</Text>
               <ScrollView style={{ maxHeight: 180, borderRadius: 12, borderWidth: 1, borderColor: C.bgCardBorder, marginBottom: 12 }}>
                 {Object.entries(gabaritsParCategorie).map(([cat, items]) => (
                   <View key={cat}>
@@ -808,7 +810,7 @@ export const GenerateursScreen = () => {
                         style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 10, paddingVertical: 8,
                           backgroundColor: infogGabarit === g.cle ? "rgba(167,139,250,0.15)" : "transparent" }}>
                         <Text style={{ color: infogGabarit === g.cle ? "#A78BFA" : C.textPrimary, fontSize: 13, flex: 1 }}>{g.libelle}</Text>
-                        <Text style={{ color: C.textMuted, fontSize: 11 }}>{g.prix_fcfa.toLocaleString("fr-FR")} FCFA</Text>
+                        <Text style={{ color: C.textMuted, fontSize: 11 }}>{g.prix_fcfa.toLocaleString("fr-FR")} crédits</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
